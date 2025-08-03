@@ -16,9 +16,27 @@ import BasicLayout from "layouts/authentication/components/BasicLayout";
 import bgImage from "assets/images/bg-sign-in-basic.jpeg";
 import logo from "assets/images/logos/tansamlogo.png";
 
+import { useNavigate } from "react-router-dom";
+import users from "data/users"; // path based on your folder structure
+
 function Basic() {
   const [empid, setEmpid] = useState("");
   const [password, setPassword] = useState("");
+  const navigate = useNavigate(); // Add this line
+
+  const handleLogin = () => {
+    const user = users.find((u) => u.empid === empid && u.password === password);
+
+    if (user) {
+      if (user.role === "admin") {
+        navigate("/dashboard/admin");
+      } else if (user.role === "employee") {
+        navigate("/dashboard");
+      }
+    } else {
+      alert("Invalid EMPID or Password");
+    }
+  };
 
   return (
     <BasicLayout image={bgImage}>
@@ -66,7 +84,13 @@ function Basic() {
               />
             </MDBox>
             <MDBox mt={3} mb={1}>
-              <MDButton variant="gradient" color="info" fullWidth size="small">
+              <MDButton
+                variant="gradient"
+                color="info"
+                fullWidth
+                size="small"
+                onClick={handleLogin}
+              >
                 Login
               </MDButton>
             </MDBox>

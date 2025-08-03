@@ -3,11 +3,12 @@ import Dashboard from "layouts/dashboard/employee/dashboard";
 import YourTimesheet from "layouts/dashboard/employee/yourtimesheet";
 import ViewReports from "layouts/dashboard/employee/viewreports";
 import SignIn from "layouts/authentication/sign-in";
+import EmployeeTime from "layouts/dashboard/employee/EmployeeDetails";
 
 // @mui icons
 import Icon from "@mui/material/Icon";
 
-const routes = [
+const employeeRoutes = [
   {
     type: "collapse",
     name: "Dashboard",
@@ -40,6 +41,14 @@ const routes = [
     route: "/authentication/sign-in",
     component: <SignIn />,
   },
+  {
+    type: "collapse",
+    name: "employeetime",
+    key: "employee-time",
+    icon: <Icon fontSize="small">access_time</Icon>,
+    route: "/employee-time",
+    component: <EmployeeTime />,
+  },
 ];
 
-export default routes;
+export default employeeRoutes;
