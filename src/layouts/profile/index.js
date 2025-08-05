@@ -41,7 +41,7 @@ import AdminSidebar from "layouts/dashboard/admin/adminsidebar";
 
 function Overview() {
   return (
-    <MDBox py={3} px={3}  display="flex">
+    <MDBox py={3} px={3} display="flex">
       {/* Admin Sidebar */}
       <AdminSidebar />
 
@@ -110,12 +110,14 @@ function Overview() {
                     image={img}
                     label={`project #${index + 1}`}
                     title={["modern", "scandinavian", "minimalist", "gothic"][index]}
-                    description={[
-                      "As Uber works through a huge amount of internal management turmoil.",
-                      "Music is something that everyone has their own specific opinion about.",
-                      "Different people have different taste, and various types of music.",
-                      "Why would anyone pick blue over pink? Pink is obviously a better color.",
-                    ][index]}
+                    description={
+                      [
+                        "As Uber works through a huge amount of internal management turmoil.",
+                        "Music is something that everyone has their own specific opinion about.",
+                        "Different people have different taste, and various types of music.",
+                        "Why would anyone pick blue over pink? Pink is obviously a better color.",
+                      ][index]
+                    }
                     action={{
                       type: "internal",
                       route: "/pages/profile/profile-overview",

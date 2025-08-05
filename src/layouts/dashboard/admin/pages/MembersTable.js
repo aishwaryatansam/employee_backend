@@ -80,19 +80,21 @@ function MembersTable() {
                   >
                     <thead>
                       <tr style={{ backgroundColor: isDark ? "#33334d" : "#f0f0f0" }}>
-                        {["Employee ID", "Name", "Email", "Phone", "Role", "Actions"].map((head) => (
-                          <th
-                            key={head}
-                            style={{
-                              padding: "12px",
-                              fontWeight: "600",
-                              fontSize: "1rem",
-                              textAlign: "center",
-                            }}
-                          >
-                            {head}
-                          </th>
-                        ))}
+                        {["Employee ID", "Name", "Email", "Phone", "Role", "Actions"].map(
+                          (head) => (
+                            <th
+                              key={head}
+                              style={{
+                                padding: "12px",
+                                fontWeight: "600",
+                                fontSize: "1rem",
+                                textAlign: "center",
+                              }}
+                            >
+                              {head}
+                            </th>
+                          )
+                        )}
                       </tr>
                     </thead>
                     <tbody>

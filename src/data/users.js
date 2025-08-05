@@ -9,6 +9,11 @@ const users = [
     password: "emp123",
     role: "employee",
   },
+  {
+    empid: "EMP003",
+    password: "tl123",
+    role: "tl",
+  },
 ];
 
 export default users;

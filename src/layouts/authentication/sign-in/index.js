@@ -32,6 +32,8 @@ function Basic() {
         navigate("/dashboard/admin");
       } else if (user.role === "employee") {
         navigate("/dashboard");
+      } else if (user.role === "tl") {
+        navigate("/TLdashboard");
       }
     } else {
       alert("Invalid EMPID or Password");

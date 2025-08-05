@@ -18,6 +18,7 @@ import Configurator from "examples/Configurator";
 // Custom sidebars
 import EmployeeSidebar from "layouts/dashboard/employee/empsidebar";
 import AdminSidebar from "layouts/dashboard/admin/adminsidebar";
+import TlSidebar from "layouts/dashboard/tl/TLsidebar";
 
 // Material Dashboard 2 React themes
 import theme from "assets/theme";
@@ -140,6 +141,8 @@ export default function App() {
       <EmployeeSidebar />
     ) : userRole === "admin" ? (
       <AdminSidebar />
+    ) : userRole === "tl" ? (
+      <TlSidebar />
     ) : (
       <Sidenav
         color={sidenavColor}

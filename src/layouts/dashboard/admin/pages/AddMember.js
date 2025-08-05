@@ -75,7 +75,7 @@ const AddMember = () => {
   };
 
   return (
-    <Box py={3} px={2}  sx={{ display: "flex" }}>
+    <Box py={3} px={2} sx={{ display: "flex" }}>
       {/* Sidebar */}
       <AdminSidebar />
 
@@ -110,9 +110,7 @@ const AddMember = () => {
               <Typography variant="h5" fontWeight="bold">
                 Add New Member
               </Typography>
-              <Typography variant="subtitle2">
-                Enter your email and password to register
-              </Typography>
+              <Typography variant="subtitle2">Enter your email and password to register</Typography>
             </Box>
 
             {/* Form */}
@@ -211,7 +209,11 @@ const AddMember = () => {
                     }}
                   />
                   {showExample && (
-                    <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: "block" }}>
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      sx={{ mt: 1, display: "block" }}
+                    >
                       Try: <strong>Secure@2025!</strong>
                     </Typography>
                   )}

@@ -154,7 +154,12 @@ function Notifications() {
                 <MDBox p={2}>
                   <Grid container spacing={3}>
                     <Grid item xs={12} sm={6} lg={3}>
-                      <MDButton variant="gradient" color="success" onClick={openSuccessSB} fullWidth>
+                      <MDButton
+                        variant="gradient"
+                        color="success"
+                        onClick={openSuccessSB}
+                        fullWidth
+                      >
                         success notification
                       </MDButton>
                       {renderSuccessSB}
@@ -166,7 +171,12 @@ function Notifications() {
                       {renderInfoSB}
                     </Grid>
                     <Grid item xs={12} sm={6} lg={3}>
-                      <MDButton variant="gradient" color="warning" onClick={openWarningSB} fullWidth>
+                      <MDButton
+                        variant="gradient"
+                        color="warning"
+                        onClick={openWarningSB}
+                        fullWidth
+                      >
                         warning notification
                       </MDButton>
                       {renderWarningSB}
