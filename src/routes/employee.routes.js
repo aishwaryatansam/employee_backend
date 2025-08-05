@@ -17,21 +17,14 @@ const employeeRoutes = [
     route: "/dashboard",
     component: <Dashboard />,
   },
+
   {
     type: "collapse",
-    name: "Your Timesheet",
-    key: "your-timesheet",
-    icon: <Icon fontSize="small">table_view</Icon>,
-    route: "/yourtimesheet",
-    component: <YourTimesheet />,
-  },
-  {
-    type: "collapse",
-    name: "Report View",
-    key: "report-view",
-    icon: <Icon fontSize="small">receipt_long</Icon>,
-    route: "/viewreport",
-    component: <ViewReports />,
+    name: "Timesheet",
+    key: "employee-time",
+    icon: <Icon fontSize="small">access_time</Icon>,
+    route: "/employee-time",
+    component: <EmployeeTime />,
   },
   {
     type: "collapse",
@@ -40,14 +33,6 @@ const employeeRoutes = [
     icon: <Icon fontSize="small">login</Icon>,
     route: "/authentication/sign-in",
     component: <SignIn />,
-  },
-  {
-    type: "collapse",
-    name: "employeetime",
-    key: "employee-time",
-    icon: <Icon fontSize="small">access_time</Icon>,
-    route: "/employee-time",
-    component: <EmployeeTime />,
   },
 ];
 

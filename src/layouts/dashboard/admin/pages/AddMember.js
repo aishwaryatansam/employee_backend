@@ -1,6 +1,4 @@
 import React, { useState } from "react";
-import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
-import DashboardNavbar from "examples/Navbars/DashboardNavbar";
 import {
   Box,
   Card,
@@ -19,7 +17,8 @@ import {
 } from "@mui/material";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 
-// ✅ Import the MemberContext
+import DashboardNavbar from "examples/Navbars/DashboardNavbar";
+import AdminSidebar from "layouts/dashboard/admin/adminsidebar";
 import { useMemberContext } from "context/MemberContext";
 
 const AddMember = () => {
@@ -56,13 +55,13 @@ const AddMember = () => {
     }
 
     const newMember = {
-      id: Date.now(), // generate unique id
+      id: Date.now(),
       ...formData,
     };
 
-    addMember(newMember); // ✅ add to context
-
+    addMember(newMember);
     setOpenSnackbar(true);
+
     setFormData({
       name: "",
       email: "",
@@ -76,40 +75,48 @@ const AddMember = () => {
   };
 
   return (
-    <DashboardLayout>
-      <DashboardNavbar />
-      <Box sx={{ p: 4 }}>
-        <Card
-          sx={{
-            maxWidth: 900,
-            mx: "auto",
-            p: 4,
-            borderRadius: 5,
-            boxShadow: 6,
-            backgroundColor: "#ffffff",
-          }}
-        >
-          {/* Top Header Banner */}
-          <Box
+    <Box py={3} px={2}  sx={{ display: "flex" }}>
+      {/* Sidebar */}
+      <AdminSidebar />
+
+      {/* Main content area */}
+      <Box sx={{ ml: "240px", width: "100%" }}>
+        <DashboardNavbar />
+
+        {/* Page Content */}
+        <Box sx={{ p: 4 }}>
+          <Card
             sx={{
-              background: "linear-gradient(to right, #2196f3, #21cbf3)",
-              borderRadius: "12px",
-              padding: "16px",
-              marginBottom: "30px",
-              textAlign: "center",
-              color: "#fff",
-              boxShadow: 3,
+              maxWidth: 900,
+              mx: "auto",
+              p: 4,
+              borderRadius: 5,
+              boxShadow: 6,
+              backgroundColor: "#ffffff",
             }}
           >
-            <Typography variant="h5" fontWeight="bold">
-              Add New Member
-            </Typography>
-            <Typography variant="subtitle2">Enter your email and password to register</Typography>
-          </Box>
+            {/* Header Banner */}
+            <Box
+              sx={{
+                background: "linear-gradient(to right, #2196f3, #21cbf3)",
+                borderRadius: "12px",
+                padding: "16px",
+                marginBottom: "30px",
+                textAlign: "center",
+                color: "#fff",
+                boxShadow: 3,
+              }}
+            >
+              <Typography variant="h5" fontWeight="bold">
+                Add New Member
+              </Typography>
+              <Typography variant="subtitle2">
+                Enter your email and password to register
+              </Typography>
+            </Box>
 
-          {/* Form */}
-          <form onSubmit={handleSubmit}>
-            <Box sx={{ flexGrow: 1 }}>
+            {/* Form */}
+            <form onSubmit={handleSubmit}>
               <Grid container spacing={2}>
                 <Grid item xs={12} md={4}>
                   <TextField
@@ -171,7 +178,6 @@ const AddMember = () => {
                     <InputLabel id="role-label">Role *</InputLabel>
                     <Select
                       labelId="role-label"
-                      id="role"
                       name="role"
                       value={formData.role}
                       onChange={handleChange}
@@ -205,11 +211,7 @@ const AddMember = () => {
                     }}
                   />
                   {showExample && (
-                    <Typography
-                      variant="caption"
-                      color="text.secondary"
-                      sx={{ display: "block", mt: 1 }}
-                    >
+                    <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: "block" }}>
                       Try: <strong>Secure@2025!</strong>
                     </Typography>
                   )}
@@ -239,27 +241,28 @@ const AddMember = () => {
                   Add Member
                 </Button>
               </Box>
-            </Box>
-          </form>
-        </Card>
+            </form>
+          </Card>
 
-        <Snackbar
-          open={openSnackbar}
-          autoHideDuration={4000}
-          onClose={() => setOpenSnackbar(false)}
-          anchorOrigin={{ vertical: "top", horizontal: "right" }}
-        >
-          <Alert
+          {/* Snackbar */}
+          <Snackbar
+            open={openSnackbar}
+            autoHideDuration={4000}
             onClose={() => setOpenSnackbar(false)}
-            severity="success"
-            variant="filled"
-            sx={{ width: "100%" }}
+            anchorOrigin={{ vertical: "top", horizontal: "right" }}
           >
-            Member added successfully!
-          </Alert>
-        </Snackbar>
+            <Alert
+              onClose={() => setOpenSnackbar(false)}
+              severity="success"
+              variant="filled"
+              sx={{ width: "100%" }}
+            >
+              Member added successfully!
+            </Alert>
+          </Snackbar>
+        </Box>
       </Box>
-    </DashboardLayout>
+    </Box>
   );
 };
 

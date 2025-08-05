@@ -158,14 +158,7 @@ function EmployeeDashboard() {
 
         <Grid container spacing={3} mt={2}>
           <Grid item xs={12} md={6}>
-            <MDBox
-              sx={{
-                backgroundColor: "#d0f0c0",
-                borderRadius: "16px",
-                color: "#2e7d32",
-                padding: 2,
-              }}
-            >
+            <MDBox sx={{ borderRadius: "16px", padding: 2 }}>
               <ComplexStatisticsCard
                 color="success"
                 icon={<Icon>check_circle</Icon>}
@@ -176,14 +169,7 @@ function EmployeeDashboard() {
             </MDBox>
           </Grid>
           <Grid item xs={12} md={6}>
-            <MDBox
-              sx={{
-                backgroundColor: "#ffcdd2",
-                borderRadius: "16px",
-                color: "#c62828",
-                padding: 2,
-              }}
-            >
+            <MDBox sx={{ borderRadius: "16px", padding: 2 }}>
               <ComplexStatisticsCard
                 color="error"
                 icon={<Icon>highlight_off</Icon>}
