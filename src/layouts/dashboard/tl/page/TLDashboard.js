@@ -5,7 +5,7 @@ import Icon from "@mui/material/Icon";
 // Material Dashboard components
 import MDBox from "components/MDBox";
 import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
-import TLsidebar from "./TLsidebar";
+import TLsidebar from "../TLsidebar";
 import Footer from "examples/Footer";
 import ComplexStatisticsCard from "examples/Cards/StatisticsCards/ComplexStatisticsCard";
 import ReportsLineChart from "examples/Charts/LineCharts/ReportsLineChart";

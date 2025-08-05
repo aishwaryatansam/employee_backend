@@ -5,7 +5,7 @@ import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
 import DashboardNavbar from "examples/Navbars/DashboardNavbar";
 import MDBox from "components/MDBox";
 
-const EmployeeDetail = () => {
+const EmployeeDetails = () => {
   const { id } = useParams();
   const [activeTab, setActiveTab] = useState("timeline");
   const [showPopupForm, setShowPopupForm] = useState(false);
@@ -438,4 +438,4 @@ const EmployeeDetail = () => {
   );
 };
 
-export default EmployeeDetail;
+export default EmployeeDetails;

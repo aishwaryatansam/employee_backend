@@ -19,7 +19,7 @@ import Configurator from "examples/Configurator";
 import EmployeeSidebar from "layouts/dashboard/employee/empsidebar";
 import AdminSidebar from "layouts/dashboard/admin/adminsidebar";
 import TlSidebar from "layouts/dashboard/tl/TLsidebar";
-
+import EmployeeDetail from "layouts/dashboard/tl/page/EmployeeDetail";
 // Material Dashboard 2 React themes
 import theme from "assets/theme";
 import themeRTL from "assets/theme/theme-rtl";
@@ -48,7 +48,6 @@ export default function App() {
   const {
     miniSidenav,
     direction,
-    layout,
     openConfigurator,
     sidenavColor,
     transparentSidenav,
@@ -59,13 +58,20 @@ export default function App() {
   const [onMouseEnter, setOnMouseEnter] = useState(false);
   const [rtlCache, setRtlCache] = useState(null);
   const { pathname } = useLocation();
-  const [userRole, setUserRole] = useState("employee"); // default
 
+  // ✅ Track user role and layout
+  const [userRole, setUserRole] = useState("");
+  const [currentLayout, setCurrentLayout] = useState("");
+
+  // ✅ Load role and layout from localStorage
   useEffect(() => {
     const role = localStorage.getItem("role") || "employee";
+    const layoutFromStorage = localStorage.getItem("layout") || "dashboard";
     setUserRole(role);
+    setCurrentLayout(layoutFromStorage);
   }, []);
 
+  // RTL setup
   useMemo(() => {
     const cacheRtl = createCache({
       key: "rtl",
@@ -99,6 +105,7 @@ export default function App() {
     document.scrollingElement.scrollTop = 0;
   }, [pathname]);
 
+  // Generate routes
   const getRoutes = (allRoutes) =>
     allRoutes.map((route) => {
       if (route.collapse) {
@@ -136,6 +143,7 @@ export default function App() {
     </MDBox>
   );
 
+  // ✅ Choose sidebar based on role
   const SidebarComponent =
     userRole === "employee" ? (
       <EmployeeSidebar />
@@ -143,56 +151,52 @@ export default function App() {
       <AdminSidebar />
     ) : userRole === "tl" ? (
       <TlSidebar />
-    ) : (
-      <Sidenav
-        color={sidenavColor}
-        brand={(transparentSidenav && !darkMode) || whiteSidenav ? brandDark : brandWhite}
-        brandName="Material Dashboard 2"
-        routes={routes}
-        onMouseEnter={handleOnMouseEnter}
-        onMouseLeave={handleOnMouseLeave}
-      />
-    );
+    ) : null;
+
+  const renderLayout = (
+    <>
+      {SidebarComponent}
+      <Configurator />
+      {configsButton}
+    </>
+  );
+
+  // Main JSX
+  const themeSelection = darkMode
+    ? direction === "rtl"
+      ? themeDarkRTL
+      : themeDark
+    : direction === "rtl"
+    ? themeRTL
+    : theme;
+
+  const AppContent = (
+    <>
+      {currentLayout === "dashboard" && renderLayout}
+      <Routes>
+        {getRoutes(routes)}
+          <Route path="/employee/:id" element={<EmployeeDetail />} />
+
+        {/* Default Route */}
+        <Route path="/" element={<Navigate to="/authentication/sign-in" />} />
+
+        {/* Catch-all for unmatched routes */}
+        <Route path="*" element={<Navigate to="/authentication/sign-in" />} />
+      </Routes>
+    </>
+  );
 
   return direction === "rtl" ? (
     <CacheProvider value={rtlCache}>
-      <ThemeProvider theme={darkMode ? themeDarkRTL : themeRTL}>
+      <ThemeProvider theme={themeSelection}>
         <CssBaseline />
-        {layout === "dashboard" && (
-          <>
-            {SidebarComponent}
-            <Configurator />
-            {configsButton}
-          </>
-        )}
-        {layout === "vr" && <Configurator />}
-        <Routes>
-          {getRoutes(routes)}
-          {/* Redirect from root to sign-in */}
-          <Route path="/" element={<Navigate to="/authentication/sign-in" />} />
-          {/* Redirect unmatched routes to sign-in */}
-          <Route path="*" element={<Navigate to="/authentication/sign-in" />} />
-        </Routes>
+        {AppContent}
       </ThemeProvider>
     </CacheProvider>
   ) : (
-    <ThemeProvider theme={darkMode ? themeDark : theme}>
+    <ThemeProvider theme={themeSelection}>
       <CssBaseline />
-      {layout === "dashboard" && (
-        <>
-          {SidebarComponent}
-          <Configurator />
-          {configsButton}
-        </>
-      )}
-      {layout === "vr" && <Configurator />}
-      <Routes>
-        {getRoutes(routes)}
-        {/* Redirect from root to sign-in */}
-        <Route path="/" element={<Navigate to="/authentication/sign-in" />} />
-        {/* Redirect unmatched routes to sign-in */}
-        <Route path="*" element={<Navigate to="/authentication/sign-in" />} />
-      </Routes>
+      {AppContent}
     </ThemeProvider>
   );
 }

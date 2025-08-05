@@ -17,23 +17,31 @@ import bgImage from "assets/images/bg-sign-in-basic.jpeg";
 import logo from "assets/images/logos/tansamlogo.png";
 
 import { useNavigate } from "react-router-dom";
-import users from "data/users"; // path based on your folder structure
+import users from "data/users"; // Update path based on your structure
 
 function Basic() {
   const [empid, setEmpid] = useState("");
   const [password, setPassword] = useState("");
-  const navigate = useNavigate(); // Add this line
+  const navigate = useNavigate();
 
-  const handleLogin = () => {
+  const handleLogin = (e) => {
+    e.preventDefault(); // ✅ prevent default form submission
+
     const user = users.find((u) => u.empid === empid && u.password === password);
 
     if (user) {
+      // ✅ Set login-related data in localStorage
+      localStorage.setItem("role", user.role);
+      localStorage.setItem("layout", "dashboard");
+      localStorage.setItem("loggedIn", "true"); // optional if you want to protect routes
+
+      // ✅ Redirect based on role
       if (user.role === "admin") {
         navigate("/dashboard/admin");
       } else if (user.role === "employee") {
         navigate("/dashboard");
       } else if (user.role === "tl") {
-        navigate("/TLdashboard");
+        navigate("/tldashboard");
       }
     } else {
       alert("Invalid EMPID or Password");
@@ -59,7 +67,7 @@ function Basic() {
           </MDTypography>
         </MDBox>
         <MDBox pt={1} pb={2} px={3}>
-          <MDBox component="form" role="form">
+          <form onSubmit={handleLogin}>
             <img
               src={logo}
               alt="Company Logo"
@@ -87,16 +95,16 @@ function Basic() {
             </MDBox>
             <MDBox mt={3} mb={1}>
               <MDButton
+                type="submit" // ✅ use type="submit" since wrapped in <form>
                 variant="gradient"
                 color="info"
                 fullWidth
                 size="small"
-                onClick={handleLogin}
               >
                 Login
               </MDButton>
             </MDBox>
-          </MDBox>
+          </form>
         </MDBox>
       </Card>
     </BasicLayout>

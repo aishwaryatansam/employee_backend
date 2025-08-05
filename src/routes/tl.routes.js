@@ -4,11 +4,13 @@ import YourTimesheet from "layouts/dashboard/employee/yourtimesheet";
 import ViewReports from "layouts/dashboard/employee/viewreports";
 import SignIn from "layouts/authentication/sign-in";
 import EmployeeTime from "layouts/dashboard/employee/EmployeeDetails";
+import TLDashboard from "layouts/dashboard/tl/page/TLDashboard";
+import Timesheet from "layouts/dashboard/tl/page/Timesheet";
 
 // @mui icons
 import Icon from "@mui/material/Icon";
 
-const employeeRoutes = [
+const TlRoutes = [
   {
     type: "collapse",
     name: "Dashboard",
@@ -35,4 +37,4 @@ const employeeRoutes = [
   },
 ];
 
-export default employeeRoutes;
+export default TlRoutes;

@@ -9,9 +9,9 @@ import { Dashboard } from "@mui/icons-material";
 import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
 import DashboardNavbar from "examples/Navbars/DashboardNavbar";
 import Footer from "examples/Footer";
-import TLAddMembers from "layouts/tables/TLAddMembers";
-import TLAddProject from "layouts/tables/TLAddProject";
-import EmployeeDetail from "../employeeDetails/EmployeeDetail";
+import TLAddMembers from "./TLAddMembers";
+import TLAddProject from "./TLAddProject";
+import EmployeeDetail from "layouts/dashboard/employee/EmployeeDetails";
 import { useEffect } from "react";
 import { useParams } from "react-router-dom";
 

@@ -22,6 +22,7 @@
     "bootstrap-icons": "^1.13.1",
     "chart.js": "4.3.0",
     "chroma-js": "2.4.2",
+    "lucide-react": "^0.536.0",
     "prop-types": "15.8.1",
     "react": "18.2.0",
     "react-calendar": "^6.0.0",
@@ -31,6 +32,7 @@
     "react-router-dom": "6.11.0",
     "react-scripts": "5.0.1",
     "react-table": "7.8.0",
+    "react-toastify": "^11.0.5",
     "stylis": "4.1.4",
     "stylis-plugin-rtl": "2.1.1",
     "yup": "1.1.1"

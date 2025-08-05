@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
-import "./EmployeeDetail.css";
+
 import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
 import DashboardNavbar from "examples/Navbars/DashboardNavbar";
 import { useNavigate } from "react-router-dom";
@@ -790,7 +790,421 @@ const EmployeeDetail = () => {
               </div>
             </div>
           </>
-        )}
+        )}<style>{`/* Container */
+.employee-detail-container {
+  font-family: Arial, sans-serif;
+  background: #f9f9f9;
+  padding: 20px;
+}
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  width: 100vw;
+  background-color: rgba(255, 255, 255, 0.2); /* lighter color helps blur work better */
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px); /* for Safari */
+  z-index: 2000;
+}
+
+.popup-form {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: white;
+  z-index: 2100;
+  padding: 20px;
+  width: 90vw;
+  max-width: 700px;
+  max-height: 90vh;
+  overflow-y: auto;
+  border-radius: 8px;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+}
+
+/* Header */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+.back-link {
+  text-decoration: none;
+  color: #007bff;
+  font-size: 14px;
+}
+.header h1 {
+  font-size: 20px;
+  color: #333;
+}
+
+/* Profile Section */
+.profile-section {
+  display: flex;
+  align-items: center;
+  background: #fff;
+  padding: 15px;
+  border: 1px solid #ddd;
+  margin-bottom: 20px;
+}
+.profile-pic {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  margin-right: 15px;
+}
+.profile-info h2 {
+  font-size: 18px;
+  margin: 0;
+}
+.role {
+  font-size: 14px;
+  color: #777;
+}
+.hours-summary {
+  margin-left: auto;
+  text-align: right;
+}
+.hours-summary .total {
+  font-weight: bold;
+  font-size: 16px;
+}
+.hours-summary p {
+  margin: 2px 0;
+}
+
+/* Progress Section */
+.progress-section {
+  margin-bottom: 20px;
+}
+.progress-text {
+  font-size: 14px;
+  margin-bottom: 5px;
+}
+.progress-bar {
+  display: flex;
+  height: 6px;
+  background: #ddd;
+  margin-bottom: 5px;
+}
+.progress-bar .approved {
+  background: #4caf50;
+}
+.progress-bar .overtime {
+  background: #f44336;
+}
+.progress-bar .pending {
+  background: #f4b400;
+}
+.progress-legend {
+  font-size: 12px;
+}
+.legend {
+  margin-right: 15px;
+}
+.legend.green {
+  color: #4caf50;
+}
+.legend.red {
+  color: #f44336;
+}
+.legend.orange {
+  color: #f4b400;
+}
+
+/* Tabs */
+.tabs {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 15px;
+}
+.tab {
+  background: none;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+  padding-bottom: 5px;
+}
+.tab.active {
+  border-bottom: 2px solid #f4b400;
+  font-weight: bold;
+}
+
+/* Timeline View */
+.timeline-view {
+  background: #fff;
+  border: 1px solid #ddd;
+}
+.timeline-header {
+  display: grid;
+  grid-template-columns: 150px repeat(9, 1fr) 100px;
+  font-size: 14px;
+  font-weight: bold;
+  border-bottom: 1px solid #ddd;
+}
+.timeline-header .date-cell,
+.timeline-header .hour-label,
+.timeline-header .approval-cell {
+  padding: 8px;
+  border-right: 1px solid #ddd;
+  text-align: center;
+}
+.timeline-row {
+  display: grid;
+  grid-template-columns: 150px repeat(9, 1fr) 100px;
+  border-bottom: 1px solid #eee;
+}
+.date-cell {
+  background: #f5f5f5;
+  padding: 8px;
+  border-right: 1px solid #ddd;
+}
+.hour-cell {
+  border-right: 1px solid #ddd;
+  height: 30px;
+  transition: background-color 0.3s;
+}
+.hour-cell.holiday {
+  background-color: #ffe9a9;
+}
+
+.hour-cell.work {
+  background: #4caf50;
+}
+.hour-cell.leave {
+  background: #f44336;
+}
+.hour-cell.permission {
+  background: #2196f3;
+}
+.hour-cell.break {
+  background: #f4b400;
+}
+.approval-cell {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 5px;
+  padding: 5px;
+  border-left: 1px solid #ddd;
+}
+
+/* Icon Buttons */
+.icon-btn {
+  border: none;
+  background: none;
+  font-size: 5px;
+  cursor: pointer;
+}
+.approve-btn {
+  color: #4caf50;
+}
+.reject-btn {
+  color: #f44336;
+}
+.edit-btn {
+  color: #555;
+}
+.approval-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-wrap: wrap;
+}
+
+.icon-btn {
+  padding: 2px;
+  font-size: 10px;
+  cursor: pointer;
+  border: none;
+  border-radius: 4px;
+}
+
+.edit-btn {
+  background-color: #ffc107;
+  color: black;
+}
+
+.approve-btn {
+  background-color: #4caf50;
+  color: white;
+}
+
+.reject-btn {
+  background-color: #f44336;
+  color: white;
+}
+
+.status-label {
+  font-size: 12px;
+  margin-top: 2px;
+  color: #0e0d0d;
+}
+
+.approve-btn,
+.reject-btn {
+  margin-left: 10px;
+  font-weight: 600;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.approve-btn {
+  background-color: #4caf50;
+  color: white;
+}
+
+.approve-btn:hover {
+  background-color: #45a049;
+}
+
+.reject-btn {
+  background-color: #f44336;
+  color: white;
+}
+
+.reject-btn:hover {
+  background-color: #d32f2f;
+}
+.status-approved {
+  color: #4caf50;
+  font-weight: 600;
+}
+
+.status-rejected {
+  color: #f44336;
+  font-weight: 600;
+}
+
+.status-pending {
+  color: #ff9800;
+  font-weight: 600;
+}
+
+/* Popup Form (3:2 ratio) */
+.popup-form {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  width: 60vw;
+  height: 40vw;
+  max-width: 700px;
+  max-height: 90vh;
+  transform: translate(-50%, -50%);
+  background: #fff;
+  z-index: 1002;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.25);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Blur background */
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  backdrop-filter: blur(6px);
+  background: rgba(0, 0, 0, 0.2);
+  z-index: 1001;
+}
+
+/* Popup Content */
+.popup-header,
+.popup-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.popup-content {
+  margin-top: 10px;
+}
+.hour-block {
+  margin-bottom: 20px;
+}
+.popup-form .field {
+  margin: 10px 0;
+}
+.popup-form input,
+.popup-form select {
+  width: 100%;
+  padding: 6px;
+  margin-top: 4px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 14px;
+}
+.popup-form select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='10'%20height='6'%3E%3Cpath%20d='M0%200l5%206%205-6z'%20fill='%23333'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 10px 6px;
+  padding-right: 24px;
+}
+
+/* Footer Buttons */
+.cancel-btn,
+.save-btn {
+  padding: 8px 14px;
+  border: none;
+  cursor: pointer;
+  border-radius: 4px;
+}
+.cancel-btn {
+  background-color: #ccc;
+  margin-right: 10px;
+}
+.save-btn {
+  background-color: #1976d2;
+  color: white;
+}
+
+/* Legend */
+.legend-container {
+  margin-top: 12px;
+  display: flex;
+  gap: 16px;
+  font-size: 14px;
+  align-items: center;
+}
+.legend-box {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  margin-right: 6px;
+  border-radius: 4px;
+}
+.legend-box.work {
+  background-color: #4caf50;
+}
+.legend-box.leave {
+  background-color: #f44336;
+}
+.legend-box.permission {
+  background-color: #2196f3;
+}
+.legend-box.break {
+  background-color: #f4b400;
+}
+
+/* Responsive fallback */
+@media screen and (max-width: 600px) {
+  .popup-form {
+    width: 90vw;
+    height: 60vw;
+  }
+}
+`}</style>
       </DashboardLayout>
     </>
   );

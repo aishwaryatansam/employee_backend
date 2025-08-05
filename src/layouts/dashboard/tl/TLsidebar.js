@@ -1,10 +1,15 @@
+// src/components/TLSidebar.js
+
 import React from "react";
 import { NavLink } from "react-router-dom";
 import Icon from "@mui/material/Icon";
+import Button from "@mui/material/Button";
+
+// Material Dashboard 2 components
 import MDBox from "components/MDBox";
 import MDTypography from "components/MDTypography";
-import Button from "@mui/material/Button"; // for logout button
-// Base style for sidebar links
+
+// Styles
 const baseLinkStyle = {
   display: "flex",
   alignItems: "center",
@@ -21,6 +26,12 @@ const baseLinkStyle = {
 const activeStyle = {
   backgroundColor: "#1A73E8",
 };
+
+const navItems = [
+  { to: "/tldashboard", icon: "dashboard", label: "Dashboard" },
+  { to: "/timesheet", icon: "access_time", label: "Timesheet" },
+  { to: "/authentication/sign-in", icon: "login", label: "Sign In" },
+];
 
 const TLSidebar = () => {
   return (
@@ -44,9 +55,9 @@ const TLSidebar = () => {
         justifyContent: "space-between",
       }}
     >
-      {/* Top content */}
+      {/* Top Section */}
       <MDBox>
-        {/* Logo / Brand */}
+        {/* Brand */}
         <MDBox px={3} mb={2}>
           <MDTypography variant="h6" color="white" fontWeight="bold">
             Timesheet
@@ -55,11 +66,7 @@ const TLSidebar = () => {
 
         {/* Navigation Links */}
         <ul style={{ listStyle: "none", paddingLeft: 0, margin: 0 }}>
-          {[
-            { to: "/dashboard", icon: "dashboard", label: "Dashboard" },
-            { to: "/timesheet", icon: "access_time", label: "Timesheet" },
-            { to: "/authentication/sign-in", icon: "login", label: "Sign In" },
-          ].map(({ to, icon, label }) => (
+          {navItems.map(({ to, icon, label }) => (
             <li key={label}>
               <NavLink
                 to={to}
@@ -78,7 +85,7 @@ const TLSidebar = () => {
         </ul>
       </MDBox>
 
-      {/* Logout button at the bottom */}
+      {/* Logout Button */}
       <MDBox px={2}>
         <NavLink to="/authentication/sign-in" style={{ textDecoration: "none" }}>
           <Button
@@ -89,7 +96,7 @@ const TLSidebar = () => {
               borderRadius: "10px",
               textTransform: "none",
               fontWeight: 500,
-              color: "#fff", // 👈 This makes Logout text white
+              color: "#fff",
             }}
             startIcon={<Icon>logout</Icon>}
           >
