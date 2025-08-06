@@ -44,6 +44,8 @@ function Basic() {
         navigate("/tldashboard");
       } else if (user.role === "hr") {
         navigate("/hr/dashboard");
+      } else if (user.role === "ceo") {
+        navigate("/ceo-dashboard");
       }
     } else {
       alert("Invalid EMPID or Password");

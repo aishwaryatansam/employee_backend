@@ -1,0 +1,58 @@
+.team-reports-container {
+  margin-left: 240px; 
+  margin-top: 80px;
+/* Match this to your sidebar's width */
+  padding: 30px;
+  background: #f5f7fa;
+  font-family: "Roboto", sans-serif;
+  min-height: 100vh;
+  transition: margin-left 0.3s ease;
+}
+
+.team-reports-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: #2c3e50;
+  margin-bottom: 0.5rem;
+}
+
+.team-reports-subtitle {
+  font-size: 16px;
+  color: #6c757d;
+  margin-bottom: 2rem;
+}
+
+.team-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+
+.team-card {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.06);
+  transition: transform 0.2s ease;
+}
+
+.team-card:hover {
+  transform: translateY(-4px);
+}
+
+.team-card h3 {
+  margin-bottom: 1rem;
+  color: #34495e;
+}
+
+.team-card ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.team-card li {
+  margin-bottom: 0.5rem;
+  font-size: 15px;
+  color: #333;
+}
