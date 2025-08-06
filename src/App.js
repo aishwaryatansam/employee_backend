@@ -16,6 +16,7 @@ import Sidenav from "examples/Sidenav";
 import Configurator from "examples/Configurator";
 
 // Custom sidebars
+import HrSidebar from "layouts/dashboard/hr/sidebar/HrSidebar";
 import EmployeeSidebar from "layouts/dashboard/employee/empsidebar";
 import AdminSidebar from "layouts/dashboard/admin/adminsidebar";
 import TlSidebar from "layouts/dashboard/tl/TLsidebar";
@@ -151,6 +152,8 @@ export default function App() {
       <AdminSidebar />
     ) : userRole === "tl" ? (
       <TlSidebar />
+    ) : userRole === "hr" ? (
+      <HrSidebar />
     ) : null;
 
   const renderLayout = (
@@ -175,7 +178,7 @@ export default function App() {
       {currentLayout === "dashboard" && renderLayout}
       <Routes>
         {getRoutes(routes)}
-          <Route path="/employee/:id" element={<EmployeeDetail />} />
+        <Route path="/employee/:id" element={<EmployeeDetail />} />
 
         {/* Default Route */}
         <Route path="/" element={<Navigate to="/authentication/sign-in" />} />

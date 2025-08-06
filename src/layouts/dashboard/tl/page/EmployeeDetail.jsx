@@ -790,7 +790,8 @@ const EmployeeDetail = () => {
               </div>
             </div>
           </>
-        )}<style>{`/* Container */
+        )}
+        <style>{`/* Container */
 .employee-detail-container {
   font-family: Arial, sans-serif;
   background: #f9f9f9;

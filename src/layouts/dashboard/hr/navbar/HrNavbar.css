@@ -1,0 +1,17 @@
+.hr-navbar {
+  background-color: #ffffff !important;
+  color: #344767 !important;
+  margin-top: -24px;
+  margin-left: -24px;
+  margin-right: -24px;
+  width: auto;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.04);
+}
+
+.hr-navbar-title {
+  font-weight: bold;
+}
+
+.hr-navbar-toggle {
+  margin-right: 16px;
+}

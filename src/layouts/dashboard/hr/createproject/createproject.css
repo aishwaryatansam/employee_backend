@@ -1,0 +1,63 @@
+.create-project-container {
+  padding: 40px 20px;
+  background-color: #f4f5f7;
+  min-height: 100vh;
+  box-sizing: border-box;
+}
+
+.create-project-card {
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0px 8px 20px rgba(0, 0, 0, 0.05);
+  padding: 30px 25px;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.create-project-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0px 12px 24px rgba(0, 0, 0, 0.1);
+}
+
+.project-title {
+  color: #344767;
+  text-align: center;
+  font-weight: 600;
+  margin-bottom: 30px;
+  font-family: "Roboto", "Helvetica", "Arial", sans-serif;
+}
+
+.form-field {
+  margin-bottom: 20px !important;
+  font-family: "Roboto", "Helvetica", "Arial", sans-serif;
+}
+
+.MuiFormControl-root {
+  margin-bottom: 16px;
+}
+
+.MuiInputBase-root {
+  font-family: "Roboto", "Helvetica", "Arial", sans-serif;
+}
+
+.submit-btn {
+  background-color: #4b4fbb !important;
+  color: #ffffff !important;
+  font-weight: 600;
+  font-size: 0.9rem;
+  padding: 10px 24px;
+  margin-top: 25px;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+  border-radius: 8px;
+  border: none;
+  text-transform: none;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(75, 79, 187, 0.3);
+}
+
+.submit-btn:hover {
+  background-color: #3a3ea5;
+  color: #ffffff;
+  box-shadow: 0 6px 24px rgba(75, 79, 187, 0.5);
+}

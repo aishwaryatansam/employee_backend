@@ -3,9 +3,8 @@ import { NavLink } from "react-router-dom";
 import Icon from "@mui/material/Icon";
 import MDBox from "components/MDBox";
 import MDTypography from "components/MDTypography";
-import Button from "@mui/material/Button"; // for logout button
+import Button from "@mui/material/Button";
 
-// Base style for sidebar links
 const baseLinkStyle = {
   display: "flex",
   alignItems: "center",
@@ -23,7 +22,7 @@ const activeStyle = {
   backgroundColor: "#1A73E8",
 };
 
-const EmployeeSidebar = () => {
+const HrSidebar = () => {
   return (
     <MDBox
       className="sidebar"
@@ -45,21 +44,20 @@ const EmployeeSidebar = () => {
         justifyContent: "space-between",
       }}
     >
-      {/* Top content */}
+      {/* Top Section */}
       <MDBox>
-        {/* Logo / Brand */}
         <MDBox px={3} mb={2}>
           <MDTypography variant="h6" color="white" fontWeight="bold">
-            Timesheet
+            HR Panel
           </MDTypography>
         </MDBox>
 
-        {/* Navigation Links */}
         <ul style={{ listStyle: "none", paddingLeft: 0, margin: 0 }}>
           {[
-            { to: "/dashboard", icon: "dashboard", label: "Dashboard" },
-            { to: "/employee-time", icon: "access_time", label: "Timesheet" },
-            { to: "/authentication/sign-in", icon: "login", label: "Sign In" },
+            { to: "/hr/dashboard", icon: "dashboard", label: "HR Dashboard" },
+            { to: "/hr/create-project", icon: "add_box", label: "Create Project" },
+            { to: "/hr/company-overview", icon: "business", label: "Company Overview" },
+            { to: "/hr/assign-tl", icon: "group_add", label: "Assign TL" },
           ].map(({ to, icon, label }) => (
             <li key={label}>
               <NavLink
@@ -79,7 +77,7 @@ const EmployeeSidebar = () => {
         </ul>
       </MDBox>
 
-      {/* Logout button at the bottom */}
+      {/* Bottom Section */}
       <MDBox px={2}>
         <NavLink to="/authentication/sign-in" style={{ textDecoration: "none" }}>
           <Button
@@ -90,7 +88,7 @@ const EmployeeSidebar = () => {
               borderRadius: "10px",
               textTransform: "none",
               fontWeight: 500,
-              color: "#fff", // 👈 This makes Logout text white
+              color: "#fff",
             }}
             startIcon={<Icon>logout</Icon>}
           >
@@ -102,4 +100,4 @@ const EmployeeSidebar = () => {
   );
 };
 
-export default EmployeeSidebar;
+export default HrSidebar;
