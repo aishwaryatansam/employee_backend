@@ -1,18 +1,31 @@
-const mysql = require("mysql2");
+import express from "express";
+import cors from "cors";
+import mysql from "mysql2";
+import { addMember } from "./controller/memberController.js";
 
-const connection = mysql.createConnection({
-  host: "localhost", // your MySQL host
+const app = express();
+app.use(express.json());
+app.use(cors());
+
+const db = mysql.createConnection({
+  host: "localhost",
   user: "root",
   password: "",
   database: "employee",
 });
 
-connection.connect((err) => {
+db.connect((err) => {
   if (err) {
-    console.error("Error connecting to MySQL database:", err);
+    console.error("DB connection error:", err);
     return;
   }
   console.log("Connected to MySQL database");
 });
 
-module.exports = connection;
+// Use the controller function as route handler
+app.post("/api/employees", addMember(db));
+
+const PORT = 3001;
+app.listen(PORT, () => {
+  console.log(`Server running on http://localhost:${PORT}`);
+});
