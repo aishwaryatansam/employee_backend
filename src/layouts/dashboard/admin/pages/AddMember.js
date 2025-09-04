@@ -22,11 +22,11 @@ import AdminSidebar from "layouts/dashboard/admin/adminsidebar";
 
 const AddMember = () => {
   const [formData, setFormData] = useState({
-    name: "",
+    fullName: "",
     email: "",
     role: "hr",
     phone: "",
-    employeeId: "",
+    empId: "",
     department: "",
     password: "",
   });
@@ -70,11 +70,11 @@ const AddMember = () => {
       // success
       setOpenSnackbar(true);
       setFormData({
-        name: "",
+        fullName: "",
         email: "",
-        role: "hr",
         phone: "",
-        employeeId: "",
+        role: "hr",
+        empId: "",
         department: "",
         password: "",
       });

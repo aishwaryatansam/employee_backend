@@ -67,4 +67,3 @@ export const updateMember = (db) => (req, res) => {
   });
 };
 
-

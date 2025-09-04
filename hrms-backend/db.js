@@ -28,7 +28,7 @@ db.connect((err) => {
 });
 
 // Use the controller function as route handler
-//app.post("/api/members", addMember(db));
+app.post("/api/members", addMember(db));
 // Add missing routes for full functionality
 app.get("/api/members", getMembers(db)); // Fetch all members
 app.delete("/api/members/:id", deleteMember(db));
