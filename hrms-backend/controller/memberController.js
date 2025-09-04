@@ -32,7 +32,6 @@ export const getMembers = (db) => (req, res) => {
   });
 };
 
-
 // 🗑️ Delete a member
 export const deleteMember = (db) => (req, res) => {
   const { id } = req.params;
@@ -66,4 +65,3 @@ export const updateMember = (db) => (req, res) => {
     res.json({ success: true });
   });
 };
-

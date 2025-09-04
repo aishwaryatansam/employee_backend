@@ -9,9 +9,26 @@ const CreateProject = () => {
   const [deadline, setDeadline] = useState("");
   const [description, setDescription] = useState("");
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    alert(`Project Created: ${projectName}`);
+
+    try {
+      const res = await fetch("http://localhost:3001/api/projects", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ projectName, deadline, description }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to create project");
+
+      alert(`Project Created Successfully! ID: ${data.projectId}`);
+      setProjectName("");
+      setDeadline("");
+      setDescription("");
+    } catch (err) {
+      alert("❌ " + err.message);
+    }
   };
 
   return (

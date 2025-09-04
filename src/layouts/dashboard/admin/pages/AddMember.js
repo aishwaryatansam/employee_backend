@@ -54,7 +54,7 @@ const AddMember = () => {
     }
 
     try {
-      const res = await fetch("http://localhost:3001/api/members", {
+      const res = await fetch("http://localhost:3001/members", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
