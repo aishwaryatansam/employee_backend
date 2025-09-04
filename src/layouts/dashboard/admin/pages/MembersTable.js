@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Grid from "@mui/material/Grid";
 import Card from "@mui/material/Card";
 import IconButton from "@mui/material/IconButton";
@@ -16,29 +16,63 @@ import DashboardNavbar from "examples/Navbars/DashboardNavbar";
 import Footer from "examples/Footer";
 import AdminSidebar from "layouts/dashboard/admin/adminsidebar";
 
-import { useMemberContext } from "context/MemberContext";
-
 function MembersTable() {
   const theme = useTheme();
   const isDark = theme.palette.mode === "dark";
-  const { members, deleteMember, updateMember } = useMemberContext();
+
+  const [members, setMembers] = useState([]);
   const [editingMember, setEditingMember] = useState(null);
 
-  const handleDelete = (id) => {
-    const confirmDelete = window.confirm("Are you sure you want to delete this member?");
-    if (confirmDelete) {
-      deleteMember(id);
+  // ✅ Fetch members on load
+  useEffect(() => {
+    fetch("http://localhost:3001/api/members")
+      .then((res) => res.json())
+      .then((data) => setMembers(data))
+      .catch((err) => console.error("Failed to fetch members:", err));
+  }, []);
+
+  // ✅ Delete member
+  const handleDelete = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this member?")) return;
+
+    try {
+      const res = await fetch(`http://localhost:3001/api/members/${id}`, {
+        method: "DELETE",
+      });
+
+      if (res.ok) {
+        setMembers((prev) => prev.filter((m) => m.id !== id));
+      } else {
+        console.error("Failed to delete member");
+      }
+    } catch (err) {
+      console.error("Error deleting member:", err);
     }
   };
 
+  // ✅ Update member
   const handleEditChange = (e) => {
     const { name, value } = e.target;
     setEditingMember((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleEditSubmit = () => {
-    updateMember(editingMember);
-    setEditingMember(null);
+  const handleEditSubmit = async () => {
+    try {
+      const res = await fetch(`http://localhost:3001/api/members/${editingMember.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(editingMember),
+      });
+
+      if (res.ok) {
+        setMembers((prev) => prev.map((m) => (m.id === editingMember.id ? editingMember : m)));
+        setEditingMember(null);
+      } else {
+        console.error("Failed to update member");
+      }
+    } catch (err) {
+      console.error("Error updating member:", err);
+    }
   };
 
   return (
@@ -100,8 +134,8 @@ function MembersTable() {
                     <tbody>
                       {members.map((member) => (
                         <tr key={member.id} style={{ fontSize: "0.9rem", textAlign: "center" }}>
-                          <td style={{ padding: "10px" }}>{member.employeeId}</td>
-                          <td style={{ padding: "10px" }}>{member.name}</td>
+                          <td style={{ padding: "10px" }}>{member.empId}</td>
+                          <td style={{ padding: "10px" }}>{member.fullName}</td>
                           <td style={{ padding: "10px" }}>{member.email}</td>
                           <td style={{ padding: "10px" }}>{member.phone}</td>
                           <td style={{ padding: "10px" }}>{member.role}</td>
@@ -150,8 +184,8 @@ function MembersTable() {
                 fullWidth
                 margin="normal"
                 label="Name"
-                name="name"
-                value={editingMember.name}
+                name="fullName"
+                value={editingMember.fullName}
                 onChange={handleEditChange}
               />
               <TextField
@@ -174,8 +208,8 @@ function MembersTable() {
                 fullWidth
                 margin="normal"
                 label="Employee ID"
-                name="employeeId"
-                value={editingMember.employeeId}
+                name="empId"
+                value={editingMember.empId}
                 onChange={handleEditChange}
               />
               <TextField

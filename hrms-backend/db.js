@@ -1,7 +1,12 @@
 import express from "express";
 import cors from "cors";
 import mysql from "mysql2";
-import { addMember } from "./controller/memberController.js";
+import {
+  addMember,
+  getMembers,
+  deleteMember,
+  updateMember,
+} from "./controller/memberController.js";
 
 const app = express();
 app.use(express.json());
@@ -23,7 +28,11 @@ db.connect((err) => {
 });
 
 // Use the controller function as route handler
-app.post("/api/employees", addMember(db));
+//app.post("/api/members", addMember(db));
+// Add missing routes for full functionality
+app.get("/api/members", getMembers(db)); // Fetch all members
+app.delete("/api/members/:id", deleteMember(db));
+app.put("/api/members/:id", updateMember(db));
 
 const PORT = 3001;
 app.listen(PORT, () => {

@@ -19,11 +19,8 @@ import { Visibility, VisibilityOff } from "@mui/icons-material";
 
 import DashboardNavbar from "examples/Navbars/DashboardNavbar";
 import AdminSidebar from "layouts/dashboard/admin/adminsidebar";
-import { useMemberContext } from "context/MemberContext";
 
 const AddMember = () => {
-  const { addMember } = useMemberContext();
-
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -44,8 +41,10 @@ const AddMember = () => {
     if (name === "password") setShowExample(value.length > 0);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // password validation
     const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$/;
     if (!passwordRegex.test(formData.password)) {
       alert(
@@ -54,36 +53,42 @@ const AddMember = () => {
       return;
     }
 
-    const newMember = {
-      id: Date.now(),
-      ...formData,
-    };
+    try {
+      const res = await fetch("http://localhost:3001/api/members", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      });
 
-    addMember(newMember);
-    setOpenSnackbar(true);
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Failed to add member");
+      }
 
-    setFormData({
-      name: "",
-      email: "",
-      role: "hr",
-      phone: "",
-      employeeId: "",
-      department: "",
-      password: "",
-    });
-    setShowExample(false);
+      // success
+      setOpenSnackbar(true);
+      setFormData({
+        name: "",
+        email: "",
+        role: "hr",
+        phone: "",
+        employeeId: "",
+        department: "",
+        password: "",
+      });
+      setShowExample(false);
+    } catch (error) {
+      alert("Failed to add member: " + error.message);
+    }
   };
 
   return (
     <Box py={3} px={2} sx={{ display: "flex" }}>
-      {/* Sidebar */}
       <AdminSidebar />
-
-      {/* Main content area */}
       <Box sx={{ ml: "240px", width: "100%" }}>
         <DashboardNavbar />
-
-        {/* Page Content */}
         <Box sx={{ p: 4 }}>
           <Card
             sx={{
@@ -95,7 +100,7 @@ const AddMember = () => {
               backgroundColor: "#ffffff",
             }}
           >
-            {/* Header Banner */}
+            {/* Header */}
             <Box
               sx={{
                 background: "linear-gradient(to right, #2196f3, #21cbf3)",
@@ -110,7 +115,7 @@ const AddMember = () => {
               <Typography variant="h5" fontWeight="bold">
                 Add New Member
               </Typography>
-              <Typography variant="subtitle2">Enter your email and password to register</Typography>
+              <Typography variant="subtitle2">Enter details to register</Typography>
             </Box>
 
             {/* Form */}
@@ -120,8 +125,8 @@ const AddMember = () => {
                   <TextField
                     fullWidth
                     label="Full Name"
-                    name="name"
-                    value={formData.name}
+                    name="fullName"
+                    value={formData.fullName}
                     onChange={handleChange}
                     required
                   />
@@ -154,8 +159,8 @@ const AddMember = () => {
                   <TextField
                     fullWidth
                     label="Employee ID"
-                    name="employeeId"
-                    value={formData.employeeId}
+                    name="empId"
+                    value={formData.empId}
                     onChange={handleChange}
                     required
                   />
