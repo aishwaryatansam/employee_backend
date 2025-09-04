@@ -20,7 +20,7 @@ import { Visibility, VisibilityOff } from "@mui/icons-material";
 import DashboardNavbar from "examples/Navbars/DashboardNavbar";
 import AdminSidebar from "layouts/dashboard/admin/adminsidebar";
 
-const AddMember = () => {
+const AddMembers = () => {
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
@@ -273,4 +273,4 @@ const AddMember = () => {
   );
 };
 
-export default AddMember;
+export default AddMembers;

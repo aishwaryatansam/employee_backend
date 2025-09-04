@@ -1,4 +1,4 @@
-export const createHrProject = (req, res) => {
+export const createHrProjects = (req, res) => {
   const { projectName, deadline, description } = req.body;
   if (!projectName || !deadline) {
     return res.status(400).json({ error: "Project Name and Deadline are required" });
