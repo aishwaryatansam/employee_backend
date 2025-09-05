@@ -5,12 +5,28 @@ import HrNavbar from "layouts/dashboard/hr/navbar/HrNavbar";
 import "./assigntl.css";
 
 const AssignTL = () => {
-  const [project, setProject] = useState("");
-  const [teamLead, setTeamLead] = useState("");
+  const [projectName, setProjectName] = useState("");
+  const [teamLeadName, setTeamLeadName] = useState("");
 
-  const handleAssign = (e) => {
+  const handleAssign = async (e) => {
     e.preventDefault();
-    alert(`Assigned ${teamLead} to ${project}`);
+
+    try {
+      const res = await fetch("http://localhost:3001/api/assign", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ projectName, teamLeadName }), // ✅ camelCase
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to assign team lead");
+
+      alert(`✅ Team Lead assigned successfully! ID: ${data.assignmentId}`);
+      setProjectName("");
+      setTeamLeadName("");
+    } catch (err) {
+      alert("❌ " + err.message);
+    }
   };
 
   return (
@@ -32,8 +48,8 @@ const AssignTL = () => {
                       label="Project"
                       variant="outlined"
                       margin="normal"
-                      value={project}
-                      onChange={(e) => setProject(e.target.value)}
+                      value={projectName}
+                      onChange={(e) => setProjectName(e.target.value)}
                       required
                     />
                     <TextField
@@ -41,8 +57,8 @@ const AssignTL = () => {
                       label="Team Lead"
                       variant="outlined"
                       margin="normal"
-                      value={teamLead}
-                      onChange={(e) => setTeamLead(e.target.value)}
+                      value={teamLeadName}
+                      onChange={(e) => setTeamLeadName(e.target.value)}
                       required
                     />
                     <Box display="flex" justifyContent="center" mt={4}>

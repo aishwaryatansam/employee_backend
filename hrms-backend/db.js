@@ -7,7 +7,7 @@ import {
   deleteMember,
   updateMember,
 } from "./controller/memberController.js";
-import { createHrProjects, getHrProjects } from "./controller/hrController.js";
+import { createHrProjects, assignTeamLead } from "./controller/hrController.js";
 const app = express();
 app.use(express.json());
 app.use(cors());
@@ -36,8 +36,8 @@ app.put("/api/members/:id", updateMember(db));
 //app.post("/api/projects", addProjects(db));
 //app.get("/api/projects", getProjects(db));
 
-app.post("/api/projects", createHrProjects);
-//router.get("/api/projects", getHrProjects);
+app.post("/api/projects", createHrProjects(db));
+app.post("/api/assign", assignTeamLead(db));
 
 const PORT = 3001;
 app.listen(PORT, () => {
