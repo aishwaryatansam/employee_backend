@@ -18,6 +18,48 @@ const EmployeeDetails = () => {
   const [checkInOut, setCheckInOut] = useState({ checkIn: "", checkOut: "" });
   const [overtimeHours, setOvertimeHours] = useState("");
 
+  const handleSaveTimesheet = async () => {
+    const date = selectedDate; // "2025-09-05"
+    const dayData = hourlyDetails[date] || {};
+    const status = formMode;
+    const checkIn = dayData._checkInOut?.checkIn || "";
+    const checkOut = dayData._checkInOut?.checkOut || "";
+    const overtime = dayData._overtime || "0";
+
+    // Build hourBlocks 10AM-7PM
+    const hourBlocks = [];
+    for (let hour = 10; hour <= 18; hour++) {
+      const details = dayData[hour] || {};
+      hourBlocks.push({
+        hour,
+        projectType: details.type || "",
+        projectName: details.name || "",
+        projectPhase: details.phase || "",
+        projectTask: details.task || "",
+      });
+    }
+
+    const body = { date, checkIn, checkOut, overtime, status, hourBlocks };
+
+    try {
+      const response = await fetch("http://localhost:3001/addHourDetail", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        alert("✅ Timesheet saved successfully!");
+      } else {
+        alert("❌ Error: " + (result.error || "Could not save"));
+      }
+    } catch (e) {
+      console.error("Save failed:", e);
+      alert("⚠️ Network error! Please try again.");
+    }
+  };
+
   const getAllDatesInMonth = (year, month) => {
     const date = new Date(year, month, 1);
     const result = [];
@@ -411,6 +453,7 @@ const EmployeeDetails = () => {
                   <button className="cancel-btn" onClick={closeEditPopup}>
                     Cancel
                   </button>
+
                   <button
                     className="save-btn"
                     onClick={() => {
@@ -424,6 +467,7 @@ const EmployeeDetails = () => {
                         },
                       }));
                       closeEditPopup();
+                      handleSaveTimesheet(); // <-- Submit to backend!
                     }}
                   >
                     Save
