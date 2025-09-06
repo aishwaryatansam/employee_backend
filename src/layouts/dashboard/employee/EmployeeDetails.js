@@ -11,7 +11,7 @@ const EmployeeDetails = () => {
   const [showPopupForm, setShowPopupForm] = useState(false);
   const [selectedDate, setSelectedDate] = useState(null);
   const [hourlyDetails, setHourlyDetails] = useState({});
-  const [formMode, setFormMode] = useState("Work");
+  const [formMode, setFormMode] = useState({});
   const [dayStatus, setDayStatus] = useState({});
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
@@ -19,13 +19,14 @@ const EmployeeDetails = () => {
   const [overtimeHours, setOvertimeHours] = useState("");
   const [employee, setEmployee] = useState([]);
 
+  const padTime = (t) => (t && t.match(/^\d{2}:\d{2}$/) ? t + ":00" : t || "00:00:00");
   const handleSaveTimesheet = async () => {
     const date = selectedDate;
     const dayData = hourlyDetails[date] || {};
     const status = formMode;
-    const checkIn = dayData._checkInOut?.checkIn || "";
-    const checkOut = dayData._checkInOut?.checkOut || "";
-    const overtime = dayData._overtime || "0";
+    const checkIn = padTime(checkInOut.checkIn);
+    const checkOut = padTime(checkInOut.checkOut);
+    const overtime = parseFloat(overtimeHours) || 0;
     const hourBlocks = [];
     for (let hour = 10; hour <= 18; hour++) {
       const details = dayData[hour] || {};
@@ -58,17 +59,16 @@ const EmployeeDetails = () => {
 
   // Fetch backend data (optional, for future use)
   useEffect(() => {
-    // Use some chosen date for demo, e.g., first date of current month
-    const isoDate = new Date(selectedYear, selectedMonth, 1).toISOString().split("T")[0];
+    if (!id) return;
+
+    const isoDate = `${selectedYear}-${String(selectedMonth + 1).padStart(2, "0")}-01`; // Start of month or any date
 
     fetch(`http://localhost:3001/getHourDetail?date=${isoDate}`)
       .then((res) => res.json())
-      .then((data) => {
-        if (data.success && data.data) {
-          const formattedDate = formatDate(new Date(data.data.date));
-
-          // Convert hourBlocks array to a keyed object per hour as in frontend state
-          const hourBlocksObj = data.data.hourBlocks.reduce((acc, block) => {
+      .then((resp) => {
+        if (resp.success && resp.data) {
+          const dateKey = resp.data.date; // "2025-09-01"
+          const hourBlocksMap = resp.data.hourBlocks.reduce((acc, block) => {
             acc[block.hour] = {
               type: block.projectType,
               name: block.projectName,
@@ -77,26 +77,25 @@ const EmployeeDetails = () => {
             };
             return acc;
           }, {});
-
-          setHourlyDetails((prev) => ({
-            ...prev,
-            [formattedDate]: {
-              ...hourBlocksObj,
-              _checkInOut: { checkIn: data.data.checkIn, checkOut: data.data.checkOut },
-              _overtime: data.data.overtime,
+          setHourlyDetails((oldDetails) => ({
+            ...oldDetails,
+            [dateKey]: {
+              ...hourBlocksMap,
+              _checkOut: resp.data.checkOut,
+              _checkIn: resp.data.checkIn,
+              _overtime: resp.data.overtime,
             },
           }));
 
-          setDayStatus((prev) => ({
-            ...prev,
-            [formattedDate]: data.data.status,
+          setDayStatus((oldStatus) => ({
+            ...oldStatus,
+            [dateKey]: resp.data.status,
           }));
         }
       })
-      .catch((err) => console.error("Failed to fetch hour details:", err));
-  }, [selectedYear, selectedMonth]);
+      .catch((err) => console.error("Failed to fetch timesheet:", err));
+  }, [id, selectedYear, selectedMonth]);
 
-  // Utility: all days in month
   const getAllDatesInMonth = (year, month) => {
     const date = new Date(year, month, 1);
     const result = [];
@@ -116,12 +115,14 @@ const EmployeeDetails = () => {
     if (hour === 24) return "12 AM";
     return hour > 12 ? `${hour - 12} PM` : `${hour} AM`;
   };
-  const formatDate = (date) =>
-    date.toLocaleDateString("en-US", {
-      weekday: "short",
-      day: "numeric",
-      month: "short",
-    });
+
+  // Returns "2025-09-01" for a Date object
+  function formatDate(date) {
+    const year = date.getFullYear();
+    const month = (date.getMonth() + 1).toString().padStart(2, "0"); // zero-padded
+    const day = date.getDate().toString().padStart(2, "0"); // zero-padded
+    return `${year}-${month}-${day}`;
+  }
 
   const openEditPopup = (date) => {
     const formatted = formatDate(date);
@@ -276,26 +277,44 @@ const EmployeeDetails = () => {
                     {daysInMonth.map((date, idx) => {
                       const formatted = formatDate(date);
                       const dayDetails = hourlyDetails[formatted] || {};
-                      const checkIn = dayDetails._checkInOut?.checkIn || "";
-                      const checkOut = dayDetails._checkInOut?.checkOut || "";
-                      const overtime = dayDetails._overtime || "";
-                      const approval = dayStatus[formatted] || "";
+                      const checkIn = dayDetails._checkOut
+                        ? dayDetails._checkOut
+                        : dayDetails._checkIn || "";
+                      const checkOut = dayDetails._checkOut
+                        ? dayDetails._checkOut
+                        : dayDetails._checkIn || "";
+                      const overtime =
+                        dayDetails._overtime !== undefined ? dayDetails._overtime : "";
+                      const approval = dayDetails?.approval || dayDetails?.status || "Pending";
+
+                      const mealBreak = getMealBreak(); // Customize as needed
+
+                      // Calculate work hours excluding lunch break (hour 13)
                       const workHours = getWorkHours(dayDetails);
-                      const mealBreak = getMealBreak();
+
                       return (
                         <tr key={idx}>
                           <td>{formatted}</td>
-                          <td>{checkIn}</td>
-                          <td>{checkOut}</td>
+                          <td>{checkIn || "-"}</td>
+                          <td>{checkOut || "-"}</td>
                           <td>{mealBreak}</td>
-                          <td>{workHours > 0 ? `${workHours} hr` : ""}</td>
-                          <td>{overtime}</td>
-                          <td>{approval}</td>
+                          <td>{workHours > 0 ? `${workHours} hr` : "-"}</td>
+                          <td>{overtime || "-"}</td>
                           <td>
-                            <button
-                              className="icon-btn edit-btn"
-                              onClick={() => openEditPopup(date)}
+                            <span
+                              className={`status-label ${
+                                approval === "Approved"
+                                  ? "status-approved"
+                                  : approval === "Rejected"
+                                  ? "status-rejected"
+                                  : "status-pending"
+                              }`}
                             >
+                              {approval}
+                            </span>
+                          </td>
+                          <td>
+                            <button className="icon-btn edit-btn" onClick={() => openPopup(date)}>
                               ✎
                             </button>
                           </td>
