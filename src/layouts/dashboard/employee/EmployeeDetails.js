@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
-import "./EmployeeDetails.css"; // Assuming you have a CSS file for styling
+import "./EmployeeDetails.css";
 import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
 import DashboardNavbar from "examples/Navbars/DashboardNavbar";
 import MDBox from "components/MDBox";
 
 const EmployeeDetails = () => {
   const { id } = useParams();
-  const [activeTab, setActiveTab] = useState("timeline");
+  const [activeTab, setActiveTab] = useState("timecard");
   const [showPopupForm, setShowPopupForm] = useState(false);
   const [selectedDate, setSelectedDate] = useState(null);
   const [hourlyDetails, setHourlyDetails] = useState({});
@@ -17,16 +17,15 @@ const EmployeeDetails = () => {
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [checkInOut, setCheckInOut] = useState({ checkIn: "", checkOut: "" });
   const [overtimeHours, setOvertimeHours] = useState("");
+  const [employee, setEmployee] = useState([]);
 
   const handleSaveTimesheet = async () => {
-    const date = selectedDate; // "2025-09-05"
+    const date = selectedDate;
     const dayData = hourlyDetails[date] || {};
     const status = formMode;
     const checkIn = dayData._checkInOut?.checkIn || "";
     const checkOut = dayData._checkInOut?.checkOut || "";
     const overtime = dayData._overtime || "0";
-
-    // Build hourBlocks 10AM-7PM
     const hourBlocks = [];
     for (let hour = 10; hour <= 18; hour++) {
       const details = dayData[hour] || {};
@@ -38,16 +37,13 @@ const EmployeeDetails = () => {
         projectTask: details.task || "",
       });
     }
-
     const body = { date, checkIn, checkOut, overtime, status, hourBlocks };
-
     try {
       const response = await fetch("http://localhost:3001/addHourDetail", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
-
       const result = await response.json();
       if (result.success) {
         alert("✅ Timesheet saved successfully!");
@@ -60,6 +56,47 @@ const EmployeeDetails = () => {
     }
   };
 
+  // Fetch backend data (optional, for future use)
+  useEffect(() => {
+    // Use some chosen date for demo, e.g., first date of current month
+    const isoDate = new Date(selectedYear, selectedMonth, 1).toISOString().split("T")[0];
+
+    fetch(`http://localhost:3001/getHourDetail?date=${isoDate}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && data.data) {
+          const formattedDate = formatDate(new Date(data.data.date));
+
+          // Convert hourBlocks array to a keyed object per hour as in frontend state
+          const hourBlocksObj = data.data.hourBlocks.reduce((acc, block) => {
+            acc[block.hour] = {
+              type: block.projectType,
+              name: block.projectName,
+              phase: block.projectPhase,
+              task: block.projectTask,
+            };
+            return acc;
+          }, {});
+
+          setHourlyDetails((prev) => ({
+            ...prev,
+            [formattedDate]: {
+              ...hourBlocksObj,
+              _checkInOut: { checkIn: data.data.checkIn, checkOut: data.data.checkOut },
+              _overtime: data.data.overtime,
+            },
+          }));
+
+          setDayStatus((prev) => ({
+            ...prev,
+            [formattedDate]: data.data.status,
+          }));
+        }
+      })
+      .catch((err) => console.error("Failed to fetch hour details:", err));
+  }, [selectedYear, selectedMonth]);
+
+  // Utility: all days in month
   const getAllDatesInMonth = (year, month) => {
     const date = new Date(year, month, 1);
     const result = [];
@@ -69,7 +106,6 @@ const EmployeeDetails = () => {
     }
     return result;
   };
-
   const daysInMonth = getAllDatesInMonth(selectedYear, selectedMonth);
 
   const phases = ["Design", "Development", "Testing", "Deployment"];
@@ -80,7 +116,6 @@ const EmployeeDetails = () => {
     if (hour === 24) return "12 AM";
     return hour > 12 ? `${hour - 12} PM` : `${hour} AM`;
   };
-
   const formatDate = (date) =>
     date.toLocaleDateString("en-US", {
       weekday: "short",
@@ -92,17 +127,14 @@ const EmployeeDetails = () => {
     const formatted = formatDate(date);
     setSelectedDate(formatted);
     setFormMode(dayStatus[formatted] || "Work");
-
     const saved = hourlyDetails[formatted]?._checkInOut || {};
     setCheckInOut({
       checkIn: saved.checkIn || "",
       checkOut: saved.checkOut || "",
     });
-
     setOvertimeHours(hourlyDetails[formatted]?._overtime || "");
     setShowPopupForm(true);
   };
-
   const closeEditPopup = () => {
     setShowPopupForm(false);
     setSelectedDate(null);
@@ -136,6 +168,20 @@ const EmployeeDetails = () => {
     }
   }, [formMode, selectedDate]);
 
+  // Calculate work hours for a day (all filled hour blocks except break hour 13)
+  const getWorkHours = (details = {}) => {
+    let count = 0;
+    for (let hour = 10; hour <= 18; hour++) {
+      if (hour === 13) continue; // lunch break
+      const hd = details[hour];
+      if (hd && hd.type) count++;
+    }
+    return count;
+  };
+
+  // For meal break, just say 1hr 1-2pm for now, or customize
+  const getMealBreak = () => "1 hr";
+
   return (
     <MDBox sx={{ fontSize: "0.875rem" }}>
       <DashboardLayout>
@@ -148,7 +194,6 @@ const EmployeeDetails = () => {
               </Link>
               <h1>Time & Attendance</h1>
             </div>
-
             <div className="profile-section">
               <img src="https://via.placeholder.com/60" alt="Employee" className="profile-pic" />
               <div className="profile-info">
@@ -162,7 +207,6 @@ const EmployeeDetails = () => {
                 <p>20 hrs Holiday</p>
               </div>
             </div>
-
             <div className="progress-section">
               <p className="progress-text">Hour breakdown: 264 hrs</p>
               <div className="progress-bar">
@@ -176,7 +220,6 @@ const EmployeeDetails = () => {
                 <span className="legend orange">Pending: 10 hrs</span>
               </div>
             </div>
-
             <div className="tabs">
               <button
                 className={`tab ${activeTab === "timecard" ? "active" : ""}`}
@@ -191,7 +234,6 @@ const EmployeeDetails = () => {
                 Timeline
               </button>
             </div>
-
             <div className="month-selector">
               <select
                 value={selectedMonth}
@@ -231,37 +273,32 @@ const EmployeeDetails = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {daysInMonth.map((date, index) => {
+                    {daysInMonth.map((date, idx) => {
                       const formatted = formatDate(date);
-                      const dayDetail = hourlyDetails[formatted] || {};
-                      const detail =
-                        dayStatus[formatted] === "Leave"
-                          ? "Leave"
-                          : Object.entries(dayDetail)
-                              .filter(([key]) => key !== "_checkInOut" && key !== "_overtime")
-                              .map(
-                                ([hour, d]) =>
-                                  `${formatHour(Number(hour))}: ${d.name || "-"} (${
-                                    d.phase || "-"
-                                  })`
-                              )
-                              .join(", ") || "-";
-
-                      const checkIn = dayDetail._checkInOut?.checkIn || "-";
-                      const checkOut = dayDetail._checkInOut?.checkOut || "-";
-                      const overtime = dayDetail._overtime || "0";
-                      const workHours = 8 + parseFloat(overtime);
-
+                      const dayDetails = hourlyDetails[formatted] || {};
+                      const checkIn = dayDetails._checkInOut?.checkIn || "";
+                      const checkOut = dayDetails._checkInOut?.checkOut || "";
+                      const overtime = dayDetails._overtime || "";
+                      const approval = dayStatus[formatted] || "";
+                      const workHours = getWorkHours(dayDetails);
+                      const mealBreak = getMealBreak();
                       return (
-                        <tr key={index}>
+                        <tr key={idx}>
                           <td>{formatted}</td>
                           <td>{checkIn}</td>
                           <td>{checkOut}</td>
-                          <td>1 hr</td>
-                          <td>{workHours} hrs</td>
-                          <td>{overtime} hrs</td>
-                          <td>{dayStatus[formatted] === "Leave" ? "-" : "Approved"}</td>
-                          <td>{detail}</td>
+                          <td>{mealBreak}</td>
+                          <td>{workHours > 0 ? `${workHours} hr` : ""}</td>
+                          <td>{overtime}</td>
+                          <td>{approval}</td>
+                          <td>
+                            <button
+                              className="icon-btn edit-btn"
+                              onClick={() => openEditPopup(date)}
+                            >
+                              ✎
+                            </button>
+                          </td>
                         </tr>
                       );
                     })}
@@ -281,7 +318,6 @@ const EmployeeDetails = () => {
                   ))}
                   <div className="approval-cell">Edit</div>
                 </div>
-
                 {daysInMonth.map((date, index) => {
                   const formatted = formatDate(date);
                   return (
@@ -292,12 +328,10 @@ const EmployeeDetails = () => {
                         const hourData = hourlyDetails[formatted]?.[hour];
                         const isLeave = dayStatus[formatted] === "Leave";
                         const isFilled = hourData && Object.keys(hourData).length > 0;
-
                         let colorClass = "";
                         if (hour === 13) colorClass = "break";
                         else if (isLeave) colorClass = "leave";
                         else if (isFilled) colorClass = "work";
-
                         return (
                           <div
                             key={hourIdx}
@@ -344,7 +378,6 @@ const EmployeeDetails = () => {
                 </div>
                 <div className="popup-content">
                   <p className="popup-date">{selectedDate}</p>
-
                   <div className="field-row">
                     <div className="field">
                       <label>Check-In Time</label>
@@ -367,7 +400,6 @@ const EmployeeDetails = () => {
                       />
                     </div>
                   </div>
-
                   <div className="field">
                     <label>Overtime (in hours)</label>
                     <input
@@ -379,7 +411,6 @@ const EmployeeDetails = () => {
                       disabled={formMode === "Leave"}
                     />
                   </div>
-
                   <div className="field">
                     <label>Global Status</label>
                     <select value={formMode} onChange={(e) => setFormMode(e.target.value)}>
@@ -387,7 +418,6 @@ const EmployeeDetails = () => {
                       <option value="Leave">Leave</option>
                     </select>
                   </div>
-
                   {[...Array(9)].map((_, i) => {
                     const hour = 10 + i;
                     const hourData = hourlyDetails[selectedDate]?.[hour] || {};
@@ -448,12 +478,10 @@ const EmployeeDetails = () => {
                     );
                   })}
                 </div>
-
                 <div className="popup-footer">
                   <button className="cancel-btn" onClick={closeEditPopup}>
                     Cancel
                   </button>
-
                   <button
                     className="save-btn"
                     onClick={() => {
@@ -467,7 +495,7 @@ const EmployeeDetails = () => {
                         },
                       }));
                       closeEditPopup();
-                      handleSaveTimesheet(); // <-- Submit to backend!
+                      handleSaveTimesheet();
                     }}
                   >
                     Save

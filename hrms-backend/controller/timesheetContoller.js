@@ -57,14 +57,36 @@ export const updateEmployeeHours = (db) => (req, res) => {
 };
 
 // 📂 Get employee hours for a given month
-export const getEmployeeHours = (db) => (req, res) => {
-  const { userId, year, month } = req.params;
-  const sql = `
-    SELECT * FROM employee_hours
-    WHERE userId = ? AND YEAR(date) = ? AND MONTH(date) = ?
+export const getHourDetail = (db) => (req, res) => {
+  const { date } = req.query; // expected as YYYY-MM-DD
+
+  const query = `
+   SELECT date, checkIn, checkOut, overtime, status, hourBlocks
+FROM timesheet WHERE date = ?
+
   `;
-  db.query(sql, [userId, year, month], (err, rows) => {
-    if (err) return res.status(500).json({ error: err.message });
-    res.json(rows);
+
+  db.query(query, [date], (err, results) => {
+    if (err) {
+      console.error("DB Error:", err);
+      return res.json({ success: false, error: err.message });
+    }
+
+    if (results.length === 0) {
+      return res.json({ success: true, data: null }); // no entry for this date
+    }
+
+    const row = results[0];
+    res.json({
+      success: true,
+      data: {
+        date: row.date,
+        checkIn: row.check_in,
+        checkOut: row.check_out,
+        overtime: row.overtime,
+        status: row.status,
+        hourBlocks: row.hourBlocks ? JSON.parse(row.hourBlocks) : [],
+      },
+    });
   });
 };
