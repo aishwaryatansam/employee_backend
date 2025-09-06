@@ -277,46 +277,25 @@ const EmployeeDetails = () => {
                     {daysInMonth.map((date, idx) => {
                       const formatted = formatDate(date);
                       const dayDetails = hourlyDetails[formatted] || {};
-                      const checkIn = dayDetails._checkOut
-                        ? dayDetails._checkOut
-                        : dayDetails._checkIn || "";
-                      const checkOut = dayDetails._checkOut
-                        ? dayDetails._checkOut
-                        : dayDetails._checkIn || "";
-                      const overtime =
-                        dayDetails._overtime !== undefined ? dayDetails._overtime : "";
-                      const approval = dayDetails?.approval || dayDetails?.status || "Pending";
+                      const checkIn = dayDetails._checkIn || "-";
+                      const checkOut = dayDetails._checkOut || "-";
+                      const overtime = dayDetails._overtime || "-";
+                      const approval = dayDetails?.status || "Pending";
+                      const mealBreak = getMealBreak();
 
-                      const mealBreak = getMealBreak(); // Customize as needed
-
-                      // Calculate work hours excluding lunch break (hour 13)
                       const workHours = getWorkHours(dayDetails);
 
                       return (
                         <tr key={idx}>
                           <td>{formatted}</td>
-                          <td>{checkIn || "-"}</td>
-                          <td>{checkOut || "-"}</td>
+                          <td>{checkIn}</td>
+                          <td>{checkOut}</td>
                           <td>{mealBreak}</td>
                           <td>{workHours > 0 ? `${workHours} hr` : "-"}</td>
-                          <td>{overtime || "-"}</td>
+                          <td>{typeof overtime === "number" ? `${overtime} hr` : overtime}</td>
+                          <td>{approval}</td>
                           <td>
-                            <span
-                              className={`status-label ${
-                                approval === "Approved"
-                                  ? "status-approved"
-                                  : approval === "Rejected"
-                                  ? "status-rejected"
-                                  : "status-pending"
-                              }`}
-                            >
-                              {approval}
-                            </span>
-                          </td>
-                          <td>
-                            <button className="icon-btn edit-btn" onClick={() => openPopup(date)}>
-                              ✎
-                            </button>
+                            <button onClick={() => openPopup(date)}>✎</button>
                           </td>
                         </tr>
                       );
