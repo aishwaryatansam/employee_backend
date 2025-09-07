@@ -18,6 +18,7 @@ const EmployeeDetails = () => {
   const [checkInOut, setCheckInOut] = useState({ checkIn: "", checkOut: "" });
   const [overtimeHours, setOvertimeHours] = useState("");
   const [employee, setEmployee] = useState([]);
+  const [timecardData, setTimecardData] = useState([]);
 
   const padTime = (t) => (t && t.match(/^\d{2}:\d{2}$/) ? t + ":00" : t || "00:00:00");
   const handleSaveTimesheet = async () => {
@@ -59,42 +60,20 @@ const EmployeeDetails = () => {
 
   // Fetch backend data (optional, for future use)
   useEffect(() => {
-    if (!id) return;
+    const monthToSend = selectedMonth; // API expects 1-12
+    const url = `http://localhost:3001/getHourDetailsByMonth?year=${selectedYear}&month=${monthToSend}`;
+    console.log("Fetching URL:", url);
 
-    const isoDate = `${selectedYear}-${String(selectedMonth + 1).padStart(2, "0")}-01`; // Start of month or any date
-
-    fetch(`http://localhost:3001/getHourDetail?date=${isoDate}`)
+    fetch(url)
       .then((res) => res.json())
-      .then((resp) => {
-        if (resp.success && resp.data) {
-          const dateKey = resp.data.date; // "2025-09-01"
-          const hourBlocksMap = resp.data.hourBlocks.reduce((acc, block) => {
-            acc[block.hour] = {
-              type: block.projectType,
-              name: block.projectName,
-              phase: block.projectPhase,
-              task: block.projectTask,
-            };
-            return acc;
-          }, {});
-          setHourlyDetails((oldDetails) => ({
-            ...oldDetails,
-            [dateKey]: {
-              ...hourBlocksMap,
-              _checkOut: resp.data.checkOut,
-              _checkIn: resp.data.checkIn,
-              _overtime: resp.data.overtime,
-            },
-          }));
-
-          setDayStatus((oldStatus) => ({
-            ...oldStatus,
-            [dateKey]: resp.data.status,
-          }));
+      .then((data) => {
+        console.log("API response:", data);
+        if (data.success && data.data) {
+          setTimecardData(data.data);
         }
       })
-      .catch((err) => console.error("Failed to fetch timesheet:", err));
-  }, [id, selectedYear, selectedMonth]);
+      .catch((err) => console.error("Fetch error:", err));
+  }, [selectedMonth, selectedYear]);
 
   const getAllDatesInMonth = (year, month) => {
     const date = new Date(year, month, 1);
@@ -118,9 +97,10 @@ const EmployeeDetails = () => {
 
   // Returns "2025-09-01" for a Date object
   function formatDate(date) {
-    const year = date.getFullYear();
-    const month = (date.getMonth() + 1).toString().padStart(2, "0"); // zero-padded
-    const day = date.getDate().toString().padStart(2, "0"); // zero-padded
+    const d = date instanceof Date ? date : new Date(date);
+    const year = d.getFullYear();
+    const month = (d.getMonth() + 1).toString().padStart(2, "0");
+    const day = d.getDate().toString().padStart(2, "0");
     return `${year}-${month}-${day}`;
   }
 
@@ -274,29 +254,28 @@ const EmployeeDetails = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {daysInMonth.map((date, idx) => {
-                      const formatted = formatDate(date);
-                      const dayDetails = hourlyDetails[formatted] || {};
-                      const checkIn = dayDetails._checkIn || "-";
-                      const checkOut = dayDetails._checkOut || "-";
-                      const overtime = dayDetails._overtime || "-";
-                      const approval = dayDetails?.status || "Pending";
-                      const mealBreak = getMealBreak();
-
-                      const workHours = getWorkHours(dayDetails);
-
+                    {timecardData.map((row) => {
+                      const hourBlocks = JSON.parse(row.hourBlocks || "[]"); // parse JSON string
+                      const details = row.hourBlocks || "-";
                       return (
-                        <tr key={idx}>
-                          <td>{formatted}</td>
-                          <td>{checkIn}</td>
-                          <td>{checkOut}</td>
-                          <td>{mealBreak}</td>
-                          <td>{workHours > 0 ? `${workHours} hr` : "-"}</td>
-                          <td>{typeof overtime === "number" ? `${overtime} hr` : overtime}</td>
-                          <td>{approval}</td>
+                        <tr key={row.id}>
+                          <td>{formatDate(row.date)}</td> {/* Date */}
+                          <td>{row.checkIn}</td> {/* Check-in */}
+                          <td>{row.checkOut}</td> {/* Check-out */}
+                          <td>{row.mealBreak || "1 hr"}</td> {/* Meal Break */}
+                          <td>{getWorkHours(hourBlocks)}</td> {/* Work Hours */}
+                          <td>{row.overtime || 0}</td> {/* Overtime */}
+                          <td>{row.approval || "Pending"}</td> {/* Approval */}
                           <td>
-                            <button onClick={() => openPopup(date)}>✎</button>
+                            {JSON.parse(row.hourBlocks || "[]").map((block, idx) => (
+                              <div key={idx}>
+                                Hour: {block.hour},Project Type: {block.projectType || "-"},Project Name:{" "}
+                                {block.projectName || "-"},Project Phase: {block.projectPhase || "-"},
+                                 Project Task: {block.projectTask || "-"}
+                              </div>
+                            ))}
                           </td>
+                          {/* Details */}
                         </tr>
                       );
                     })}
