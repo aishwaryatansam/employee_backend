@@ -27,43 +27,8 @@ export const addProjects = (db) => (req, res) => {
       const projectId = result.insertId;
 
       // Insert members
-      if (assignedMembers?.length > 0) {
-        assignedMembers.forEach((member) => {
-          db.query(
-            `INSERT INTO project_members (project_id, member_name) VALUES (?, ?)`,
-            [projectId, member],
-            (err) => err && console.error("❌ Member Insert Error:", err)
-          );
-        });
-      }
 
       // Insert phases + tasks
-      if (phases?.length > 0) {
-        phases.forEach((phase) => {
-          db.query(
-            `INSERT INTO phases (project_id, phase_name) VALUES (?, ?)`,
-            [projectId, phase.phaseName],
-            (err, phaseResult) => {
-              if (err) {
-                console.error("❌ Phase Insert Error:", err);
-                return;
-              }
-
-              const phaseId = phaseResult.insertId;
-
-              if (phase.tasks?.length > 0) {
-                phase.tasks.forEach((task) => {
-                  db.query(
-                    `INSERT INTO tasks (phase_id, task_name, assigned_to) VALUES (?, ?, ?)`,
-                    [phaseId, task.taskName, task.assignedTo],
-                    (err) => err && console.error("❌ Task Insert Error:", err)
-                  );
-                });
-              }
-            }
-          );
-        });
-      }
 
       res.json({ message: "✅ Project created successfully!", projectId });
     }
