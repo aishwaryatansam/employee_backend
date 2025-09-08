@@ -277,9 +277,9 @@ const EmployeeDetails = () => {
                 <div className="pending" style={{ width: "10%" }}></div>
               </div>
               <div className="progress-legend">
-                <span className="legend green">Approved: 132 hrs</span>
-                <span className="legend red">Overtime: 40 hrs</span>
-                <span className="legend orange">Pending: 10 hrs</span>
+                <span className="legend green">{regular} hrs Regular</span>
+                <span className="legend red">{overtime} hrs Overtime</span>
+                <span className="legend orange">{holiday} Holidays</span>
               </div>
             </div>
             <div className="tabs">
