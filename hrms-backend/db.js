@@ -39,7 +39,7 @@ app.put("/api/members/:id", updateMember(db));
 app.post("/addHourDetail", addHourDetail(db));
 app.post("/api/projects", createHrProjects(db));
 app.post("/api/assign", assignTeamLead(db));
-app.get("/getHourDetailsByMonth", (db));
+app.get("/getHourDetailsByMonth", getHourDetailsByMonth(db));
 
 const PORT = 3001;
 app.listen(PORT, () => {

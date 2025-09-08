@@ -75,6 +75,49 @@ const EmployeeDetails = () => {
       .catch((err) => console.error("Fetch error:", err));
   }, [selectedMonth, selectedYear]);
 
+  // populate popup when opened
+  useEffect(() => {
+    if (!showPopupForm || !selectedDate || !timecardData) return;
+
+    // find record for selectedDate
+    const entry = timecardData.find(
+      (d) => new Date(d.date).toISOString().slice(0, 10) === selectedDate
+    );
+
+    if (entry) {
+      // check-in / check-out
+      setCheckInOut({
+        checkIn: entry.checkIn || "",
+        checkOut: entry.checkOut || "",
+      });
+
+      // overtime + status
+      setOvertimeHours(entry.overtime || 0);
+      setFormMode(entry.status || "Work");
+
+      // hourBlocks parsing
+      try {
+        const parsed = JSON.parse(entry.hourBlocks || "[]");
+        const mapped = {};
+        parsed.forEach((block) => {
+          mapped[block.hour] = {
+            type: block.projectType || "",
+            name: block.projectName || "",
+            phase: block.projectPhase || "",
+            task: block.projectTask || "",
+          };
+        });
+
+        setHourlyDetails((prev) => ({
+          ...prev,
+          [selectedDate]: mapped,
+        }));
+      } catch (err) {
+        console.error("Error parsing hourBlocks:", err);
+      }
+    }
+  }, [showPopupForm, selectedDate, timecardData]);
+
   const getAllDatesInMonth = (year, month) => {
     const date = new Date(year, month, 1);
     const result = [];
