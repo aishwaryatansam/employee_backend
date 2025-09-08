@@ -36,7 +36,6 @@ export const assignTeamLead = (db) => (req, res) => {
   });
 };
 
-
 // Optional: fetch all assignments
 export const getAssignments = (req, res) => {
   db.query("SELECT * FROM assignments ORDER BY assigned_at DESC", (err, results) => {
