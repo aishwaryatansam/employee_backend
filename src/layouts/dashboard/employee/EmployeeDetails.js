@@ -1,32 +1,33 @@
 import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
-import "./EmployeeDetails.css"; // Assuming you have a CSS file for styling
+import "./EmployeeDetails.css";
 import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
 import DashboardNavbar from "examples/Navbars/DashboardNavbar";
 import MDBox from "components/MDBox";
 
 const EmployeeDetails = () => {
   const { id } = useParams();
-  const [activeTab, setActiveTab] = useState("timeline");
+  const [activeTab, setActiveTab] = useState("timecard");
   const [showPopupForm, setShowPopupForm] = useState(false);
   const [selectedDate, setSelectedDate] = useState(null);
   const [hourlyDetails, setHourlyDetails] = useState({});
-  const [formMode, setFormMode] = useState("Work");
+  const [formMode, setFormMode] = useState({});
   const [dayStatus, setDayStatus] = useState({});
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [checkInOut, setCheckInOut] = useState({ checkIn: "", checkOut: "" });
   const [overtimeHours, setOvertimeHours] = useState("");
+  const [employee, setEmployee] = useState([]);
+  const [timecardData, setTimecardData] = useState([]);
 
+  const padTime = (t) => (t && t.match(/^\d{2}:\d{2}$/) ? t + ":00" : t || "00:00:00");
   const handleSaveTimesheet = async () => {
-    const date = selectedDate; // "2025-09-05"
+    const date = selectedDate;
     const dayData = hourlyDetails[date] || {};
     const status = formMode;
-    const checkIn = dayData._checkInOut?.checkIn || "";
-    const checkOut = dayData._checkInOut?.checkOut || "";
-    const overtime = dayData._overtime || "0";
-
-    // Build hourBlocks 10AM-7PM
+    const checkIn = padTime(checkInOut.checkIn);
+    const checkOut = padTime(checkInOut.checkOut);
+    const overtime = parseFloat(overtimeHours) || 0;
     const hourBlocks = [];
     for (let hour = 10; hour <= 18; hour++) {
       const details = dayData[hour] || {};
@@ -38,16 +39,13 @@ const EmployeeDetails = () => {
         projectTask: details.task || "",
       });
     }
-
     const body = { date, checkIn, checkOut, overtime, status, hourBlocks };
-
     try {
       const response = await fetch("http://localhost:3001/addHourDetail", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
-
       const result = await response.json();
       if (result.success) {
         alert("✅ Timesheet saved successfully!");
@@ -60,6 +58,66 @@ const EmployeeDetails = () => {
     }
   };
 
+  // Fetch backend data (optional, for future use)
+  useEffect(() => {
+    const monthToSend = selectedMonth; // API expects 1-12
+    const url = `http://localhost:3001/getHourDetailsByMonth?year=${selectedYear}&month=${monthToSend}`;
+    console.log("Fetching URL:", url);
+
+    fetch(url)
+      .then((res) => res.json())
+      .then((data) => {
+        console.log("API response:", data);
+        if (data.success && data.data) {
+          setTimecardData(data.data);
+        }
+      })
+      .catch((err) => console.error("Fetch error:", err));
+  }, [selectedMonth, selectedYear]);
+
+  // populate popup when opened
+  useEffect(() => {
+    if (!showPopupForm || !selectedDate || !timecardData) return;
+
+    // find record for selectedDate
+    const entry = timecardData.find(
+      (d) => new Date(d.date).toISOString().slice(0, 10) === selectedDate
+    );
+
+    if (entry) {
+      // check-in / check-out
+      setCheckInOut({
+        checkIn: entry.checkIn || "",
+        checkOut: entry.checkOut || "",
+      });
+
+      // overtime + status
+      setOvertimeHours(entry.overtime || 0);
+      setFormMode(entry.status || "Work");
+
+      // hourBlocks parsing
+      try {
+        const parsed = JSON.parse(entry.hourBlocks || "[]");
+        const mapped = {};
+        parsed.forEach((block) => {
+          mapped[block.hour] = {
+            type: block.projectType || "",
+            name: block.projectName || "",
+            phase: block.projectPhase || "",
+            task: block.projectTask || "",
+          };
+        });
+
+        setHourlyDetails((prev) => ({
+          ...prev,
+          [selectedDate]: mapped,
+        }));
+      } catch (err) {
+        console.error("Error parsing hourBlocks:", err);
+      }
+    }
+  }, [showPopupForm, selectedDate, timecardData]);
+
   const getAllDatesInMonth = (year, month) => {
     const date = new Date(year, month, 1);
     const result = [];
@@ -69,7 +127,6 @@ const EmployeeDetails = () => {
     }
     return result;
   };
-
   const daysInMonth = getAllDatesInMonth(selectedYear, selectedMonth);
 
   const phases = ["Design", "Development", "Testing", "Deployment"];
@@ -81,28 +138,27 @@ const EmployeeDetails = () => {
     return hour > 12 ? `${hour - 12} PM` : `${hour} AM`;
   };
 
-  const formatDate = (date) =>
-    date.toLocaleDateString("en-US", {
-      weekday: "short",
-      day: "numeric",
-      month: "short",
-    });
+  // Returns "2025-09-01" for a Date object
+  function formatDate(date) {
+    const d = date instanceof Date ? date : new Date(date);
+    const year = d.getFullYear();
+    const month = (d.getMonth() + 1).toString().padStart(2, "0");
+    const day = d.getDate().toString().padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  }
 
   const openEditPopup = (date) => {
     const formatted = formatDate(date);
     setSelectedDate(formatted);
     setFormMode(dayStatus[formatted] || "Work");
-
     const saved = hourlyDetails[formatted]?._checkInOut || {};
     setCheckInOut({
       checkIn: saved.checkIn || "",
       checkOut: saved.checkOut || "",
     });
-
     setOvertimeHours(hourlyDetails[formatted]?._overtime || "");
     setShowPopupForm(true);
   };
-
   const closeEditPopup = () => {
     setShowPopupForm(false);
     setSelectedDate(null);
@@ -136,6 +192,58 @@ const EmployeeDetails = () => {
     }
   }, [formMode, selectedDate]);
 
+  // Calculate work hours for a day (all filled hour blocks except break hour 13)
+  const getWorkHours = (details = {}) => {
+    let count = 0;
+    for (let hour = 10; hour <= 18; hour++) {
+      if (hour === 13) continue; // lunch break
+      const hd = details[hour];
+      if (hd && hd.type) count++;
+    }
+    return count;
+  };
+
+  // For meal break, just say 1hr 1-2pm for now, or customize
+  const getMealBreak = () => "1 hr";
+  // calculate totals
+  const calculateTotals = () => {
+    let total = 0;
+    let regular = 0;
+    let overtime = 0;
+    let holiday = 0;
+
+    timecardData.forEach((row) => {
+      if (row.status === "Leave" || row.status === "Holiday") {
+        // count a leave/holiday as 8 hrs (adjust if your org uses a different rule)
+        holiday += 1;
+
+        return;
+      }
+
+      // Parse hourBlocks and count worked hours
+      let worked = 0;
+      try {
+        const hourBlocks = JSON.parse(row.hourBlocks || "[]");
+        worked = hourBlocks.filter(
+          (block) =>
+            block.projectType || block.projectName || block.projectPhase || block.projectTask
+        ).length;
+      } catch (err) {
+        console.error("Error parsing hourBlocks:", err);
+      }
+
+      const ot = parseFloat(row.overtime) || 0;
+
+      total += worked + ot;
+      regular += worked;
+      overtime += ot;
+    });
+
+    return { total, regular, overtime, holiday };
+  };
+
+  const { total, regular, overtime, holiday } = calculateTotals();
+
   return (
     <MDBox sx={{ fontSize: "0.875rem" }}>
       <DashboardLayout>
@@ -148,7 +256,6 @@ const EmployeeDetails = () => {
               </Link>
               <h1>Time & Attendance</h1>
             </div>
-
             <div className="profile-section">
               <img src="https://via.placeholder.com/60" alt="Employee" className="profile-pic" />
               <div className="profile-info">
@@ -156,13 +263,12 @@ const EmployeeDetails = () => {
                 <p className="role">Product Designer • Hourly</p>
               </div>
               <div className="hours-summary">
-                <p className="total">264 hrs Total</p>
-                <p>172 hrs Regular</p>
-                <p>24 hrs Overtime</p>
-                <p>20 hrs Holiday</p>
+                <p className="total">{total} hrs Total</p>
+                <p>{regular} hrs Regular</p>
+                <p>{overtime} hrs Overtime</p>
+                <p>{holiday} Holiday</p>
               </div>
             </div>
-
             <div className="progress-section">
               <p className="progress-text">Hour breakdown: 264 hrs</p>
               <div className="progress-bar">
@@ -176,7 +282,6 @@ const EmployeeDetails = () => {
                 <span className="legend orange">Pending: 10 hrs</span>
               </div>
             </div>
-
             <div className="tabs">
               <button
                 className={`tab ${activeTab === "timecard" ? "active" : ""}`}
@@ -191,7 +296,6 @@ const EmployeeDetails = () => {
                 Timeline
               </button>
             </div>
-
             <div className="month-selector">
               <select
                 value={selectedMonth}
@@ -231,37 +335,29 @@ const EmployeeDetails = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {daysInMonth.map((date, index) => {
-                      const formatted = formatDate(date);
-                      const dayDetail = hourlyDetails[formatted] || {};
-                      const detail =
-                        dayStatus[formatted] === "Leave"
-                          ? "Leave"
-                          : Object.entries(dayDetail)
-                              .filter(([key]) => key !== "_checkInOut" && key !== "_overtime")
-                              .map(
-                                ([hour, d]) =>
-                                  `${formatHour(Number(hour))}: ${d.name || "-"} (${
-                                    d.phase || "-"
-                                  })`
-                              )
-                              .join(", ") || "-";
-
-                      const checkIn = dayDetail._checkInOut?.checkIn || "-";
-                      const checkOut = dayDetail._checkInOut?.checkOut || "-";
-                      const overtime = dayDetail._overtime || "0";
-                      const workHours = 8 + parseFloat(overtime);
-
+                    {timecardData.map((row) => {
+                      const hourBlocks = JSON.parse(row.hourBlocks || "[]"); // parse JSON string
+                      const details = row.hourBlocks || "-";
                       return (
-                        <tr key={index}>
-                          <td>{formatted}</td>
-                          <td>{checkIn}</td>
-                          <td>{checkOut}</td>
-                          <td>1 hr</td>
-                          <td>{workHours} hrs</td>
-                          <td>{overtime} hrs</td>
-                          <td>{dayStatus[formatted] === "Leave" ? "-" : "Approved"}</td>
-                          <td>{detail}</td>
+                        <tr key={row.id}>
+                          <td>{formatDate(row.date)}</td> {/* Date */}
+                          <td>{row.checkIn}</td> {/* Check-in */}
+                          <td>{row.checkOut}</td> {/* Check-out */}
+                          <td>{row.mealBreak || "1 hr"}</td> {/* Meal Break */}
+                          <td>{getWorkHours(hourBlocks)}</td> {/* Work Hours */}
+                          <td>{row.overtime || 0}</td> {/* Overtime */}
+                          <td>{row.approval || "Pending"}</td> {/* Approval */}
+                          <td>
+                            {JSON.parse(row.hourBlocks || "[]").map((block, idx) => (
+                              <div key={idx}>
+                                Hour: {block.hour},Project Type: {block.projectType || "-"},Project
+                                Name: {block.projectName || "-"},Project Phase:{" "}
+                                {block.projectPhase || "-"}, Project Task:{" "}
+                                {block.projectTask || "-"}
+                              </div>
+                            ))}
+                          </td>
+                          {/* Details */}
                         </tr>
                       );
                     })}
@@ -281,7 +377,6 @@ const EmployeeDetails = () => {
                   ))}
                   <div className="approval-cell">Edit</div>
                 </div>
-
                 {daysInMonth.map((date, index) => {
                   const formatted = formatDate(date);
                   return (
@@ -292,12 +387,10 @@ const EmployeeDetails = () => {
                         const hourData = hourlyDetails[formatted]?.[hour];
                         const isLeave = dayStatus[formatted] === "Leave";
                         const isFilled = hourData && Object.keys(hourData).length > 0;
-
                         let colorClass = "";
                         if (hour === 13) colorClass = "break";
                         else if (isLeave) colorClass = "leave";
                         else if (isFilled) colorClass = "work";
-
                         return (
                           <div
                             key={hourIdx}
@@ -344,7 +437,6 @@ const EmployeeDetails = () => {
                 </div>
                 <div className="popup-content">
                   <p className="popup-date">{selectedDate}</p>
-
                   <div className="field-row">
                     <div className="field">
                       <label>Check-In Time</label>
@@ -367,7 +459,6 @@ const EmployeeDetails = () => {
                       />
                     </div>
                   </div>
-
                   <div className="field">
                     <label>Overtime (in hours)</label>
                     <input
@@ -379,7 +470,6 @@ const EmployeeDetails = () => {
                       disabled={formMode === "Leave"}
                     />
                   </div>
-
                   <div className="field">
                     <label>Global Status</label>
                     <select value={formMode} onChange={(e) => setFormMode(e.target.value)}>
@@ -387,7 +477,6 @@ const EmployeeDetails = () => {
                       <option value="Leave">Leave</option>
                     </select>
                   </div>
-
                   {[...Array(9)].map((_, i) => {
                     const hour = 10 + i;
                     const hourData = hourlyDetails[selectedDate]?.[hour] || {};
@@ -448,12 +537,10 @@ const EmployeeDetails = () => {
                     );
                   })}
                 </div>
-
                 <div className="popup-footer">
                   <button className="cancel-btn" onClick={closeEditPopup}>
                     Cancel
                   </button>
-
                   <button
                     className="save-btn"
                     onClick={() => {
@@ -467,7 +554,7 @@ const EmployeeDetails = () => {
                         },
                       }));
                       closeEditPopup();
-                      handleSaveTimesheet(); // <-- Submit to backend!
+                      handleSaveTimesheet();
                     }}
                   >
                     Save
