@@ -9,6 +9,7 @@ import {
 } from "./controller/memberController.js";
 import { createHrProjects, assignTeamLead } from "./controller/hrController.js";
 import { addHourDetail, getHourDetailsByMonth } from "./controller/timesheetContoller.js";
+import { addProjects } from "./controller/projectController.js";
 const app = express();
 app.use(express.json());
 app.use(cors());

@@ -33,7 +33,7 @@ function TLAddProject() {
   const [selectedMembers, setSelectedMembers] = useState([]);
   const [projectType, setProjectType] = useState("Billable");
   const [projectData, setProjectData] = useState([]);
-
+  const [assignedMembers, setAssignedMembers] = useState("");
   const [projectsList, setProjectsList] = useState(() => {
     const stored = localStorage.getItem("tl_project_data");
     return stored ? JSON.parse(stored) : [];
@@ -136,64 +136,81 @@ function TLAddProject() {
     updated[index].phaseName = value;
     setPhases(updated);
   };
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+
     if (!projectName || !startDate || !endDate || !description) {
       toast.error("Please fill in all required fields");
       return;
     }
 
-    const storedProjects = JSON.parse(localStorage.getItem("tl_project_data")) || [];
-    const isDark = theme.palette.mode === "dark";
-
     const newProject = {
       projectName,
+      projectType,
       description,
-      status,
       startDate,
       endDate,
-      completedDate,
-      projectType,
-      assignedMembers: selectedMembers,
-      createdAt: isEditing ? storedProjects[editingIndex].createdAt : new Date().toISOString(),
-      phases,
+      completedDate: completedDate || null,
+      status,
+      assignedMembers,
+      phases: phases.map((p) => ({
+        phaseName: p.phaseName,
+        tasks: p.tasks.map((t) => ({
+          taskName: t.taskName,
+          assignedTo: t.assignedTo,
+        })),
+      })),
     };
 
-    let updatedProjects;
-    if (isEditing) {
-      storedProjects[editingIndex] = newProject;
-      updatedProjects = [...storedProjects];
-      setIsEditing(false);
-      setEditingIndex(null);
-      toast.success("Project updated successfully!");
-    } else {
-      updatedProjects = [...storedProjects, newProject];
-      toast.success("Project added successfully!");
+    try {
+      let res;
+      if (isEditing) {
+        const projectId = projectsList[editingIndex].id;
+        res = await fetch(`http://localhost:3001/addProjects/${projectId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(newProject),
+        });
+      } else {
+        res = await fetch("http://localhost:3001/addProjects", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(newProject),
+        });
+      }
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Failed to save project");
+      }
+
+      const data = await res.json();
+
+      if (isEditing) {
+        toast.success("✅ Project updated successfully!");
+        const updated = [...projectsList];
+        updated[editingIndex] = { ...newProject, id: projectsList[editingIndex].id };
+        setProjectsList(updated);
+        setIsEditing(false);
+        setEditingIndex(null);
+      } else {
+        toast.success("✅ Project added successfully!");
+        setProjectsList((prev) => [...prev, { ...newProject, id: data.projectId }]);
+      }
+
+      // Reset form
+      setProjectName("");
+      setDescription("");
+      setStatus("Ongoing");
+      setStartDate("");
+      setEndDate("");
+      setCompletedDate("");
+      setSelectedMembers([]);
+      setProjectType("Billable");
+      setPhases([{ phaseName: "", tasks: [{ taskName: "", assignedTo: "" }] }]);
+    } catch (err) {
+      toast.error("❌ " + err.message);
     }
-
-    localStorage.setItem("tl_project_data", JSON.stringify(updatedProjects));
-    setProjectsList(updatedProjects);
-
-    // Reset form
-    setProjectName("");
-    setDescription("");
-    setStatus("Ongoing");
-    setStartDate("");
-    setEndDate("");
-    setCompletedDate("");
-    setSelectedMembers([]);
-    setProjectType("Billable");
-    setPhases([{ phaseName: "", tasks: [{ taskName: "", assignedTo: "" }] }]);
-  };
-  const handleDeleteProject = (index) => {
-    const confirmed = window.confirm("Are you sure you want to delete this project?");
-    if (!confirmed) return;
-
-    const updatedProjects = [...projectsList];
-    updatedProjects.splice(index, 1);
-    setProjectsList(updatedProjects);
-    localStorage.setItem("tl_project_data", JSON.stringify(updatedProjects));
-    toast.success("Project deleted.");
   };
 
   return (
@@ -302,7 +319,7 @@ function TLAddProject() {
                             <Grid item xs={6}>
                               <FormControl fullWidth>
                                 <InputLabel>Assign To</InputLabel>
-                                <Select
+                                <TextField
                                   value={task.assignedTo}
                                   onChange={(e) =>
                                     handleTaskChange(
@@ -319,7 +336,7 @@ function TLAddProject() {
                                       {member.name}
                                     </MenuItem>
                                   ))}
-                                </Select>
+                                </TextField>
                               </FormControl>
                             </Grid>
                           </Grid>
@@ -425,41 +442,19 @@ function TLAddProject() {
                   <Grid item xs={12} sm={6}>
                     <FormControl fullWidth>
                       <InputLabel>Assign Members</InputLabel>
-                      <Select
-                        multiple
-                        value={selectedMembers}
-                        onChange={(e) => setSelectedMembers(e.target.value)}
-                        input={<OutlinedInput label="Assign Members" />}
-                        renderValue={(selected) => selected.join(", ")}
-                        MenuProps={{
-                          PaperProps: {
-                            style: {
-                              maxHeight: 224,
-                              width: 250,
-                            },
-                          },
-                        }}
-                      >
-                        {teamMembers.map((member, index) => (
-                          <MenuItem key={index} value={member.name}>
-                            <Box display="flex" alignItems="center" gap={1}>
-                              <input
-                                type="checkbox"
-                                checked={selectedMembers.indexOf(member.name) > -1}
-                                readOnly
-                                style={{ pointerEvents: "none" }}
-                              />
-                              <Typography variant="body2">{member.name}</Typography>
-                            </Box>
-                          </MenuItem>
-                        ))}
-                      </Select>
+                      <TextField
+                        fullWidth
+                        label="Assign Members"
+                        value={assignedMembers} // new state variable
+                        onChange={(e) => setAssignedMembers(e.target.value)}
+                        placeholder="Enter member names separated by commas"
+                      />
                     </FormControl>
                   </Grid>
                 </Grid>
 
                 <Box mt={4} display="flex" gap={2}>
-                  <MDButton type="submit" variant="gradient" color="info">
+                  <MDButton type="submit" variant="gradient" color="info" onSubmit={handleSubmit}>
                     {isEditing ? "Update Project" : "Save Project"}
                   </MDButton>
 
