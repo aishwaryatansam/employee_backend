@@ -1,5 +1,4 @@
 // controllers/projectController.js
-
 export const addProjects = (db) => (req, res) => {
   const {
     projectName,
@@ -9,28 +8,31 @@ export const addProjects = (db) => (req, res) => {
     endDate,
     completedDate,
     status,
-    assignedMembers,
     phases,
   } = req.body;
 
-  const sqlProject = `
-    INSERT INTO projects (project_name, project_type, description, start_date, end_date, completed_date, status)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
+  const sql = `
+    INSERT INTO projects 
+    (project_name, project_type, description, start_date, end_date, completed_date, status, assigned_members, phases) 
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
 
   db.query(
-    sqlProject,
-    [projectName, projectType, description, startDate, endDate, completedDate || null, status],
+    sql,
+    [
+      projectName,
+      projectType,
+      description,
+      startDate,
+      endDate,
+      completedDate || null,
+      status,
+      JSON.stringify(phases || []),
+    ],
     (err, result) => {
       if (err) return res.status(500).json({ error: err.message });
 
-      const projectId = result.insertId;
-
-      // Insert members
-
-      // Insert phases + tasks
-
-      res.json({ message: "✅ Project created successfully!", projectId });
+      res.json({ message: "✅ Project created successfully!", projectId: result.insertId });
     }
   );
 };

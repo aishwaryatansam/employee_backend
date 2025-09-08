@@ -40,7 +40,7 @@ app.post("/addHourDetail", addHourDetail(db));
 app.post("/api/projects", createHrProjects(db));
 app.post("/api/assign", assignTeamLead(db));
 app.get("/getHourDetailsByMonth", getHourDetailsByMonth(db));
-
+app.post("/addProjects", addProjects(db));
 const PORT = 3001;
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
