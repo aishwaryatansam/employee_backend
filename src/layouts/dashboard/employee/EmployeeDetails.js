@@ -205,6 +205,44 @@ const EmployeeDetails = () => {
 
   // For meal break, just say 1hr 1-2pm for now, or customize
   const getMealBreak = () => "1 hr";
+  // calculate totals
+  const calculateTotals = () => {
+    let total = 0;
+    let regular = 0;
+    let overtime = 0;
+    let holiday = 0;
+
+    timecardData.forEach((row) => {
+      if (row.status === "Leave" || row.status === "Holiday") {
+        // count a leave/holiday as 8 hrs (adjust if your org uses a different rule)
+        holiday += 1;
+
+        return;
+      }
+
+      // Parse hourBlocks and count worked hours
+      let worked = 0;
+      try {
+        const hourBlocks = JSON.parse(row.hourBlocks || "[]");
+        worked = hourBlocks.filter(
+          (block) =>
+            block.projectType || block.projectName || block.projectPhase || block.projectTask
+        ).length;
+      } catch (err) {
+        console.error("Error parsing hourBlocks:", err);
+      }
+
+      const ot = parseFloat(row.overtime) || 0;
+
+      total += worked + ot;
+      regular += worked;
+      overtime += ot;
+    });
+
+    return { total, regular, overtime, holiday };
+  };
+
+  const { total, regular, overtime, holiday } = calculateTotals();
 
   return (
     <MDBox sx={{ fontSize: "0.875rem" }}>
@@ -225,10 +263,10 @@ const EmployeeDetails = () => {
                 <p className="role">Product Designer • Hourly</p>
               </div>
               <div className="hours-summary">
-                <p className="total">264 hrs Total</p>
-                <p>172 hrs Regular</p>
-                <p>24 hrs Overtime</p>
-                <p>20 hrs Holiday</p>
+                <p className="total">{total} hrs Total</p>
+                <p>{regular} hrs Regular</p>
+                <p>{overtime} hrs Overtime</p>
+                <p>{holiday} Holiday</p>
               </div>
             </div>
             <div className="progress-section">
