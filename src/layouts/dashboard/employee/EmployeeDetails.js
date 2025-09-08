@@ -269,9 +269,10 @@ const EmployeeDetails = () => {
                           <td>
                             {JSON.parse(row.hourBlocks || "[]").map((block, idx) => (
                               <div key={idx}>
-                                Hour: {block.hour},Project Type: {block.projectType || "-"},Project Name:{" "}
-                                {block.projectName || "-"},Project Phase: {block.projectPhase || "-"},
-                                 Project Task: {block.projectTask || "-"}
+                                Hour: {block.hour},Project Type: {block.projectType || "-"},Project
+                                Name: {block.projectName || "-"},Project Phase:{" "}
+                                {block.projectPhase || "-"}, Project Task:{" "}
+                                {block.projectTask || "-"}
                               </div>
                             ))}
                           </td>

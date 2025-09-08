@@ -28,6 +28,11 @@ const Timesheet = () => {
   const [employeeData, setEmployeeData] = useState([]);
   const [hourlyData, setHourlyData] = useState({});
 
+  useEffect(() => {
+    const allData = JSON.parse(localStorage.getItem("timesheet_entries") || "[]");
+    console.log("All timesheet entries:", allData);
+  }, []);
+
   const [activeTab, setActiveTab] = useState("timesheet");
 
   const handleRemindApprovers = () => {
@@ -40,7 +45,10 @@ const Timesheet = () => {
   };
   const [employees, setEmployees] = useState([]);
   const [hourlyDetails, setHourlyDetails] = useState({});
-
+  useEffect(() => {
+    if (!id) return;
+    localStorage.setItem(`employee_hourly_details_${id}`, JSON.stringify(hourlyDetails));
+  }, [hourlyDetails, id]);
   const rows = employees.map((emp) => {
     const data = emp.timesheet?.[selectedDate.toString()] || {};
     return [
@@ -55,6 +63,9 @@ const Timesheet = () => {
   });
 
   useEffect(() => {
+    const storedEmployees = JSON.parse(localStorage.getItem("tl_team_members")) || [];
+    const timesheetData = JSON.parse(localStorage.getItem("tl_timesheet_data")) || [];
+
     const timesheetMap = {};
     for (const entry of timesheetData) {
       const { employeeId, date, regular, overtime, sick, total } = entry;
