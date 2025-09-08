@@ -19,13 +19,14 @@ export const addHourDetail = (db) => (req, res) => {
     [date, checkIn, checkOut, overtime, status, JSON.stringify(hourBlocks)],
     (err, result) => {
       if (err) {
-        console.error("DB Error:", err);
+        console.error("DB Insert Error:", err);
         return res.json({ success: false, error: err.message });
       }
       res.json({ success: true });
     }
   );
 };
+
 
 // ✏️ Update employee hour details
 export const updateEmployeeHours = (db) => (req, res) => {
@@ -57,14 +58,17 @@ export const updateEmployeeHours = (db) => (req, res) => {
 };
 
 // 📂 Get employee hours for a given month
-export const getEmployeeHours = (db) => (req, res) => {
-  const { userId, year, month } = req.params;
-  const sql = `
-    SELECT * FROM employee_hours
-    WHERE userId = ? AND YEAR(date) = ? AND MONTH(date) = ?
+export const getHourDetailsByMonth = (db) => (req, res) => {
+  const { year, month } = req.query; // month: 0-11
+  const startDate = `${year}-${String(Number(month) + 1).padStart(2, "0")}-01`;
+  const endDate = `${year}-${String(Number(month) + 1).padStart(2, "0")}-31`;
+
+  const query = `
+    SELECT * FROM timesheet
+    WHERE date BETWEEN ? AND ?;
   `;
-  db.query(sql, [userId, year, month], (err, rows) => {
-    if (err) return res.status(500).json({ error: err.message });
-    res.json(rows);
+  db.query(query, [startDate, endDate], (err, results) => {
+    if (err) return res.json({ success: false, error: err.message });
+    res.json({ success: true, data: results });
   });
 };
