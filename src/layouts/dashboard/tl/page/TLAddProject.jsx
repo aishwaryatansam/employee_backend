@@ -139,11 +139,13 @@ function TLAddProject() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!projectName || !startDate || !endDate || !description) {
+    // Basic validation
+    if (!projectName || !description || !startDate || !endDate) {
       toast.error("Please fill in all required fields");
       return;
     }
 
+    // Format project data for backend
     const newProject = {
       projectName,
       projectType,
@@ -152,60 +154,41 @@ function TLAddProject() {
       endDate,
       completedDate: completedDate || null,
       status,
-      assignedMembers,
-      phases: phases.map((p) => ({
-        phaseName: p.phaseName,
-        tasks: p.tasks.map((t) => ({
-          taskName: t.taskName,
-          assignedTo: t.assignedTo,
+      phases: phases.map((phase) => ({
+        phaseName: phase.phaseName,
+        tasks: phase.tasks.map((task) => ({
+          taskName: task.taskName,
+          assignedTo: task.assignedTo,
         })),
       })),
     };
 
     try {
-      let res;
-      if (isEditing) {
-        const projectId = projectsList[editingIndex].id;
-        res = await fetch(`http://localhost:3001/addProjects/${projectId}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(newProject),
-        });
-      } else {
-        res = await fetch("http://localhost:3001/addProjects", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(newProject),
-        });
+      const response = await fetch("http://localhost:3001/addProjects", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newProject),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to add project");
       }
 
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || "Failed to save project");
-      }
+      const data = await response.json();
 
-      const data = await res.json();
+      toast.success("✅ Project added successfully!");
 
-      if (isEditing) {
-        toast.success("✅ Project updated successfully!");
-        const updated = [...projectsList];
-        updated[editingIndex] = { ...newProject, id: projectsList[editingIndex].id };
-        setProjectsList(updated);
-        setIsEditing(false);
-        setEditingIndex(null);
-      } else {
-        toast.success("✅ Project added successfully!");
-        setProjectsList((prev) => [...prev, { ...newProject, id: data.projectId }]);
-      }
+      // Update local projects list to reflect new entry
+      setProjectsList((prev) => [...prev, { ...newProject, id: data.projectId }]);
 
-      // Reset form
+      // Reset form fields
       setProjectName("");
       setDescription("");
       setStatus("Ongoing");
       setStartDate("");
       setEndDate("");
       setCompletedDate("");
-      setSelectedMembers([]);
       setProjectType("Billable");
       setPhases([{ phaseName: "", tasks: [{ taskName: "", assignedTo: "" }] }]);
     } catch (err) {
@@ -443,7 +426,6 @@ function TLAddProject() {
                     <FormControl fullWidth>
                       <InputLabel>Assign Members</InputLabel>
                       <TextField
-                        fullWidth
                         label="Assign Members"
                         value={assignedMembers} // new state variable
                         onChange={(e) => setAssignedMembers(e.target.value)}
@@ -522,10 +504,7 @@ function TLAddProject() {
                       </Typography>
                     )}
                     <Typography variant="body2">
-                      <strong>Members:</strong>{" "}
-                      {project.assignedMembers.length > 0
-                        ? project.assignedMembers.join(", ")
-                        : "None"}
+                      <strong>Members:</strong> {project.assignedMembers}
                     </Typography>
 
                     {project.phases && project.phases.length > 0 && (
