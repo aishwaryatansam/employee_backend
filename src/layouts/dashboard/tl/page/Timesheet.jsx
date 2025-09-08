@@ -84,7 +84,7 @@ const Timesheet = () => {
   }, []);
 
   {
-    useEffect(() => {
+    /*useEffect(() => {
   const storedEmployees = JSON.parse(localStorage.getItem("tl_team_members")) || [];
   const timesheetData = JSON.parse(localStorage.getItem("tl_timesheet_data")) || [];
 
@@ -109,7 +109,7 @@ const Timesheet = () => {
 
   setEmployees(enriched);
 }, []);
-
+*/
   }
 
   const handleRowClick = (index) => {
@@ -126,7 +126,7 @@ const Timesheet = () => {
     }
 
     {
-      const rows = employees.map((emp) => {
+      /*const rows = employees.map((emp) => {
   const data = emp.timesheet?.[selectedDate] || {};
   return [
     emp.name,
@@ -138,7 +138,7 @@ const Timesheet = () => {
     data.total ? `${data.total} Hours` : "-",
   ];
 });
-
+*/
     }
 
     const csvContent = [header, ...rows].map((row) => row.join(",")).join("\n");
