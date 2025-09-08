@@ -53,7 +53,7 @@ function TLAddProject() {
     setStartDate(project.startDate);
     setEndDate(project.endDate);
     setCompletedDate(project.completedDate || "");
-    //setSelectedMembers(project.assignedMembers);
+    setSelectedMembers(project.assignedMembers);
     setProjectType(project.projectType);
     setPhases(project.phases);
     setIsEditing(true);
@@ -136,81 +136,64 @@ function TLAddProject() {
     updated[index].phaseName = value;
     setPhases(updated);
   };
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-
     if (!projectName || !startDate || !endDate || !description) {
       toast.error("Please fill in all required fields");
       return;
     }
 
+    const storedProjects = JSON.parse(localStorage.getItem("tl_project_data")) || [];
+    const isDark = theme.palette.mode === "dark";
+
     const newProject = {
       projectName,
-      projectType,
       description,
+      status,
       startDate,
       endDate,
-      completedDate: completedDate || null,
-      status,
-      /*assignedMembers: selectedMembers,
-      phases: phases.map((p) => ({
-        phaseName: p.phaseName,
-        tasks: p.tasks.map((t) => ({
-          taskName: t.taskName,
-          assignedTo: t.assignedTo,
-        })),
-      })),*/
+      completedDate,
+      projectType,
+      assignedMembers: selectedMembers,
+      createdAt: isEditing ? storedProjects[editingIndex].createdAt : new Date().toISOString(),
+      phases,
     };
 
-    try {
-      let res;
-      if (isEditing) {
-        const projectId = projectsList[editingIndex].id;
-        res = await fetch(`http://localhost:3001/api/projects/${projectId}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(newProject),
-        });
-      } else {
-        res = await fetch("http://localhost:3001/api/projects", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(newProject),
-        });
-      }
-
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || "Failed to save project");
-      }
-
-      const data = await res.json();
-
-      if (isEditing) {
-        toast.success("✅ Project updated successfully!");
-        const updated = [...projectsList];
-        updated[editingIndex] = { ...newProject, id: projectsList[editingIndex].id };
-        setProjectsList(updated);
-        setIsEditing(false);
-        setEditingIndex(null);
-      } else {
-        toast.success("✅ Project added successfully!");
-        setProjectsList((prev) => [...prev, { ...newProject, id: data.projectId }]);
-      }
-
-      // Reset form
-      setProjectName("");
-      setDescription("");
-      setStatus("Ongoing");
-      setStartDate("");
-      setEndDate("");
-      setCompletedDate("");
-      setSelectedMembers([]);
-      setProjectType("Billable");
-      setPhases([{ phaseName: "", tasks: [{ taskName: "", assignedTo: "" }] }]);
-    } catch (err) {
-      toast.error("❌ " + err.message);
+    let updatedProjects;
+    if (isEditing) {
+      storedProjects[editingIndex] = newProject;
+      updatedProjects = [...storedProjects];
+      setIsEditing(false);
+      setEditingIndex(null);
+      toast.success("Project updated successfully!");
+    } else {
+      updatedProjects = [...storedProjects, newProject];
+      toast.success("Project added successfully!");
     }
+
+    localStorage.setItem("tl_project_data", JSON.stringify(updatedProjects));
+    setProjectsList(updatedProjects);
+
+    // Reset form
+    setProjectName("");
+    setDescription("");
+    setStatus("Ongoing");
+    setStartDate("");
+    setEndDate("");
+    setCompletedDate("");
+    setSelectedMembers([]);
+    setProjectType("Billable");
+    setPhases([{ phaseName: "", tasks: [{ taskName: "", assignedTo: "" }] }]);
+  };
+  const handleDeleteProject = (index) => {
+    const confirmed = window.confirm("Are you sure you want to delete this project?");
+    if (!confirmed) return;
+
+    const updatedProjects = [...projectsList];
+    updatedProjects.splice(index, 1);
+    setProjectsList(updatedProjects);
+    localStorage.setItem("tl_project_data", JSON.stringify(updatedProjects));
+    toast.success("Project deleted.");
   };
 
   return (
@@ -319,7 +302,7 @@ function TLAddProject() {
                             <Grid item xs={6}>
                               <FormControl fullWidth>
                                 <InputLabel>Assign To</InputLabel>
-                                <TextField
+                                <Select
                                   value={task.assignedTo}
                                   onChange={(e) =>
                                     handleTaskChange(
@@ -336,7 +319,7 @@ function TLAddProject() {
                                       {member.name}
                                     </MenuItem>
                                   ))}
-                                </TextField>
+                                </Select>
                               </FormControl>
                             </Grid>
                           </Grid>

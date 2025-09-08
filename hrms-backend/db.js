@@ -9,8 +9,6 @@ import {
 } from "./controller/memberController.js";
 import { createHrProjects, assignTeamLead } from "./controller/hrController.js";
 import { addHourDetail, getHourDetailsByMonth } from "./controller/timesheetContoller.js";
-// import { getProjects } from "./controller/projectController.js";
-
 const app = express();
 app.use(express.json());
 app.use(cors());
@@ -42,7 +40,7 @@ app.put("/api/members/:id", updateMember(db));
 app.post("/addHourDetail", addHourDetail(db));
 app.post("/api/projects", createHrProjects(db));
 app.post("/api/assign", assignTeamLead(db));
-app.post
+app.get("/getHourDetailsByMonth", getHourDetailsByMonth(db));
 
 const PORT = 3001;
 app.listen(PORT, () => {
