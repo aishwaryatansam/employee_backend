@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
 // @mui material components
 import Card from "@mui/material/Card";
@@ -17,33 +17,23 @@ import bgImage from "assets/images/background.png";
 import logo from "assets/images/logos/tansamlogo.png";
 
 import { useNavigate } from "react-router-dom";
+import users from "data/users"; // Update path based on your structure
 
 function Basic() {
-  const [email, setEmail] = useState("");
+  const [empid, setEmpid] = useState("");
   const [password, setPassword] = useState("");
-  const [members, setMembers] = useState([]);
   const navigate = useNavigate();
 
-  // ✅ Fetch members from backend
-  useEffect(() => {
-    fetch("http://localhost:3001/api/members")
-      .then((res) => res.json())
-      .then((data) => setMembers(data))
-      .catch((err) => console.error("Failed to fetch members:", err));
-  }, []);
-
   const handleLogin = (e) => {
-    e.preventDefault();
+    e.preventDefault(); // ✅ prevent default form submission
 
-    // ✅ Find user by email & password
-    const user = members.find((u) => u.email === email && u.password.trim() === password.trim());
+    const user = users.find((u) => u.empid === empid && u.password === password);
 
     if (user) {
-      // ✅ Store login info
+      // ✅ Set login-related data in localStorage
       localStorage.setItem("role", user.role);
       localStorage.setItem("layout", "dashboard");
-      localStorage.setItem("loggedIn", "true");
-      localStorage.setItem("userId", user.id); // optional
+      localStorage.setItem("loggedIn", "true"); // optional if you want to protect routes
 
       // ✅ Redirect based on role
       if (user.role === "admin") {
@@ -58,7 +48,7 @@ function Basic() {
         navigate("/ceo-dashboard");
       }
     } else {
-      alert("Invalid Email or Password");
+      alert("Invalid EMPID or Password");
     }
   };
 
@@ -85,18 +75,14 @@ function Basic() {
             <img
               src={logo}
               alt="Company Logo"
-              style={{
-                display: "block",
-                margin: "0px auto 5px auto",
-                width: "60px",
-              }}
+              style={{ display: "block", margin: "0px auto 5px auto", width: "60px" }}
             />
             <MDBox mb={2} mt={2}>
               <MDInput
                 type="text"
-                label="Email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                label="EMPID"
+                value={empid}
+                onChange={(e) => setEmpid(e.target.value)}
                 fullWidth
                 size="small"
               />
@@ -112,7 +98,13 @@ function Basic() {
               />
             </MDBox>
             <MDBox mt={3} mb={1}>
-              <MDButton type="submit" variant="gradient" color="info" fullWidth size="small">
+              <MDButton
+                type="submit" // ✅ use type="submit" since wrapped in <form>
+                variant="gradient"
+                color="info"
+                fullWidth
+                size="small"
+              >
                 Login
               </MDButton>
             </MDBox>
