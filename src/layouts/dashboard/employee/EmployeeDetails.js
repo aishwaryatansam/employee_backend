@@ -377,36 +377,55 @@ const EmployeeDetails = () => {
                   ))}
                   <div className="approval-cell">Edit</div>
                 </div>
+
                 {daysInMonth.map((date, index) => {
                   const formatted = formatDate(date);
+
+                  const entry = timecardData.find(
+                    (d) => formatDate(d.date) === formatted // ✅ fixed
+                  );
+
+                  const hourBlocks = entry ? JSON.parse(entry.hourBlocks || "[]") : [];
+
                   return (
                     <div className="timeline-row" key={index}>
                       <div className="date-cell">{formatted}</div>
+
                       {[...Array(9)].map((_, hourIdx) => {
                         const hour = 10 + hourIdx;
-                        const hourData = hourlyDetails[formatted]?.[hour];
-                        const isLeave = dayStatus[formatted] === "Leave";
-                        const isFilled = hourData && Object.keys(hourData).length > 0;
+                        const block = hourBlocks.find((b) => b.hour === hour);
+
+                        const status = entry?.status || "Work";
+                        const isLeave = status === "Leave";
+                        const isFilled =
+                          block &&
+                          (block.projectType ||
+                            block.projectName ||
+                            block.projectPhase ||
+                            block.projectTask);
+
                         let colorClass = "";
                         if (hour === 13) colorClass = "break";
                         else if (isLeave) colorClass = "leave";
                         else if (isFilled) colorClass = "work";
+
                         return (
                           <div
                             key={hourIdx}
                             className={`hour-cell ${colorClass}`}
                             title={
-                              isFilled
-                                ? `${hourData.name || "-"} (${hourData.phase || "-"})`
-                                : isLeave
+                              isLeave
                                 ? "Leave"
                                 : hour === 13
                                 ? "Lunch Break"
+                                : isFilled
+                                ? `${block.projectName || "-"} (${block.projectPhase || "-"})`
                                 : ""
                             }
                           />
                         );
                       })}
+
                       <div className="approval-cell">
                         <button className="icon-btn edit-btn" onClick={() => openEditPopup(date)}>
                           ✎

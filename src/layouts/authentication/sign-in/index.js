@@ -13,7 +13,7 @@ import MDButton from "components/MDButton";
 import BasicLayout from "layouts/authentication/components/BasicLayout";
 
 // Images
-import bgImage from "assets/images/bg-sign-in-basic.jpeg";
+import bgImage from "assets/images/background.png";
 import logo from "assets/images/logos/tansamlogo.png";
 
 import { useNavigate } from "react-router-dom";
