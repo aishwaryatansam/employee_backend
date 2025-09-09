@@ -57,7 +57,7 @@ const Timesheet = () => {
       emp.type,
       data.regular || "-",
       data.overtime ? `${data.overtime} Hours` : "-",
-      data.sick ? `${data.sick} Hours` : "-",
+      //data.sick ? `${data.sick} Hours` : "-",
       data.total ? `${data.total} Hours` : "-",
     ];
   });
@@ -68,9 +68,11 @@ const Timesheet = () => {
 
     const timesheetMap = {};
     for (const entry of timesheetData) {
-      const { employeeId, date, regular, overtime, sick, total } = entry;
+      /*const { employeeId, date, regular, overtime, sick, total } = entry;*/
+      const { employeeId, date, regular, overtime, total } = entry;
       if (!timesheetMap[employeeId]) timesheetMap[employeeId] = {};
-      timesheetMap[employeeId][date.toString()] = { regular, overtime, sick, total };
+      /*  timesheetMap[employeeId][date.toString()] = { regular, overtime, sick, total };*/
+      timesheetMap[employeeId][date.toString()] = { regular, overtime, total };
     }
 
     const enriched = storedEmployees.map((member) => {
@@ -117,8 +119,8 @@ const Timesheet = () => {
   };
   const leaveDays = [5, 18, 27]; // e.g. 5th, 18th, 27th of selected month
   // Dummy leave days for demo (could be pulled from DB later)
-  const header = ["Name", "Role", "Type", "Regular", "Overtime", "Sick Leave", "Total Hours"];
-
+  const header = ["Name", "Role", "Type", "Regular", "Overtime", "Total Hours"];
+  /*  const header = ["Name", "Role", "Type", "Regular", "Overtime", "Sick Leave", "Total Hours"];*/
   const handleCreateReport = () => {
     if (!selectedDate) {
       toast.warning("Please select a date to generate a report.");
@@ -327,7 +329,9 @@ const Timesheet = () => {
                     <th>Type</th>
                     <th>Regular</th>
                     <th>Overtime</th>
-                    <th>Sick Leave</th>
+                    {/* Sick Leave
+                     <th>Sick Leave</th>
+                    */}
 
                     <th>Total Hour</th>
                   </tr>
@@ -350,7 +354,9 @@ const Timesheet = () => {
                           <td>{emp.type}</td>
                           <td>{dayData ? `${dayData.regular} Hours` : "-"}</td>
                           <td>{dayData ? `${dayData.overtime} Hours` : "-"}</td>
-                          <td>{dayData ? `${dayData.sick} Hours` : "-"}</td>
+
+                          {/* <td>{dayData ? `${dayData.sick} Hours` : "-"}</td> */}
+
                           <td>{dayData ? `${dayData.total} Hours` : "-"}</td>
                         </tr>
                       );

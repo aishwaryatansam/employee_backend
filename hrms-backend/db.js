@@ -29,9 +29,8 @@ db.connect((err) => {
   console.log("Connected to MySQL database");
 });
 
-
 app.post("/members", addMember(db));
-app.get("/api/members", getMembers(db)); 
+app.get("/api/members", getMembers(db));
 app.delete("/api/members/:id", deleteMember(db));
 app.put("/api/members/:id", updateMember(db));
 app.post("/addHourDetail", addHourDetail(db));
