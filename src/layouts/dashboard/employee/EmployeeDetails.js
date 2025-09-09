@@ -242,7 +242,7 @@ const EmployeeDetails = () => {
     return { total, regular, overtime, holiday };
   };
 
-  const { total, regular, overtime, holiday } = calculateTotals()
+  const { total, regular, overtime, holiday } = calculateTotals();
 
   return (
     <MDBox sx={{ fontSize: "0.875rem" }}>

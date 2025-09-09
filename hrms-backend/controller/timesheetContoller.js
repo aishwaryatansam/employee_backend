@@ -27,7 +27,6 @@ export const addHourDetail = (db) => (req, res) => {
   );
 };
 
-
 // ✏️ Update employee hour details
 export const updateEmployeeHours = (db) => (req, res) => {
   const { userId, date } = req.params;
