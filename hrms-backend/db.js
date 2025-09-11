@@ -6,6 +6,7 @@ import {
   getMembers,
   deleteMember,
   updateMember,
+  getMembersByEmail,
 } from "./controller/memberController.js";
 import { createHrProjects, assignTeamLead } from "./controller/hrController.js";
 import { addHourDetail, getHourDetailsByMonth } from "./controller/timesheetContoller.js";
@@ -36,6 +37,7 @@ app.put("/api/members/:id", updateMember(db));
 app.post("/addHourDetail", addHourDetail(db));
 app.post("/api/projects", createHrProjects(db));
 app.post("/api/assign", assignTeamLead(db));
+app.get("/api/members/byEmail", getMembersByEmail(db));
 app.get("/getHourDetailsByMonth", getHourDetailsByMonth(db));
 app.post("/addProjects", addProjects(db));
 const PORT = 3001;

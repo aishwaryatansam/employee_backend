@@ -14,7 +14,7 @@ import TLAddProject from "./TLAddProject";
 import EmployeeDetail from "layouts/dashboard/employee/EmployeeDetails";
 import { useEffect } from "react";
 import { useParams } from "react-router-dom";
-
+import EmployeeStatus from "layouts/dashboard/tl/page/EmployeeDetail.jsx";
 const Timesheet = () => {
   const { id } = useParams(); // ✅ This gives you the `id` from URL like /timesheet/:id
   const today = new Date().getDate();
@@ -27,11 +27,60 @@ const Timesheet = () => {
   const getDaysInMonth = (month, year) => new Date(year, month + 1, 0).getDate();
   const [employeeData, setEmployeeData] = useState([]);
   const [hourlyData, setHourlyData] = useState({});
-
+  /*
   useEffect(() => {
     const allData = JSON.parse(localStorage.getItem("timesheet_entries") || "[]");
     console.log("All timesheet entries:", allData);
   }, []);
+*/
+  useEffect(() => {
+    const monthToSend = selectedMonth + 1; // backend expects 1–12
+    const url = `http://localhost:3001/getHourDetailsByMonth?year=${selectedYear}&month=${monthToSend}`;
+    console.log("Fetching:", url);
+
+    fetch(url)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && Array.isArray(data.data)) {
+          const timesheetMap = {};
+
+          data.data.forEach((entry) => {
+            const dateObj = new Date(entry.date);
+            const day = dateObj.getDate();
+
+            const empId = entry.employeeId; // make sure API sends employeeId
+
+            if (!timesheetMap[empId]) {
+              timesheetMap[empId] = {
+                id: empId,
+                name: entry.employeeName || "Unknown", // fallback if API doesn’t send name
+                role: entry.role || "Employee",
+                type: entry.type || "Full-time",
+                timesheet: {},
+              };
+            }
+
+            const regular = calculateHours(entry.checkIn, entry.checkOut);
+            const overtime = parseFloat(entry.overtime || 0);
+            const total = regular + overtime;
+
+            timesheetMap[empId].timesheet[day] = { regular, overtime, total };
+          });
+
+          setEmployees(Object.values(timesheetMap));
+        }
+      })
+      .catch((err) => console.error("API error:", err));
+  }, [selectedMonth, selectedYear]);
+
+  // helper
+  function calculateHours(checkIn, checkOut) {
+    if (!checkIn || !checkOut || checkIn === "00:00:00" || checkOut === "00:00:00") return 0;
+    const [inH, inM] = checkIn.split(":").map(Number);
+    const [outH, outM] = checkOut.split(":").map(Number);
+    const diff = outH * 60 + outM - (inH * 60 + inM);
+    return diff > 0 ? Math.round(diff / 60) : 0;
+  }
 
   const [activeTab, setActiveTab] = useState("timesheet");
 
@@ -199,6 +248,12 @@ const Timesheet = () => {
               onClick={() => setActiveTab("addProject")}
             >
               Add Project
+            </button>
+            <button
+              className={`tab ${activeTab === "projectStaus" ? "active" : ""}`}
+              onClick={() => setActiveTab("projectStaus")}
+            >
+              Project Status
             </button>
           </div>
           {activeTab === "timesheet" && (
@@ -369,6 +424,7 @@ const Timesheet = () => {
 
           {activeTab === "addMembers" && <TLAddMembers />}
           {activeTab === "addProject" && <TLAddProject />}
+          {activeTab === "projectStaus" && <EmployeeStatus />}
         </div>
         <ToastContainer />
       </div>

@@ -18,6 +18,32 @@ export const addMember = (db) => (req, res) => {
   });
 };
 
+// controllers/memberController.js
+export const getMembersByEmail = (db) => (req, res) => {
+  const { email } = req.query; // ✅ extract email from query
+  if (!email) {
+    return res.status(400).json({ success: false, error: "Email is required" });
+  }
+
+  const sql = "SELECT * FROM members WHERE email = ?";
+  db.query(sql, [email], (err, results) => {
+    if (err) return res.status(500).json({ success: false, error: err.message });
+    if (results.length === 0)
+      return res.status(404).json({ success: false, error: "User not found" });
+    res.json({ success: true, data: results[0] });
+  });
+};
+
+export const getMembersById = (db) => (req, res) => {
+  const { id } = req.params;
+
+  const sql = "SELECT * FROM members WHERE id = ?";
+  db.query(sql, [id], (err, results) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!results.length) return res.status(404).json({ error: "Member not found" });
+    res.json(results[0]);
+  });
+};
 // 📋 Get all members
 export const getMembers = (db) => (req, res) => {
   const sql = `SELECT * FROM members`;

@@ -40,10 +40,8 @@ function Basic() {
 
     if (user) {
       // ✅ Store login info
-      localStorage.setItem("role", user.role);
-      localStorage.setItem("layout", "dashboard");
-      localStorage.setItem("loggedIn", "true");
-      localStorage.setItem("userId", user.id); // optional
+      localStorage.setItem("userEmail", user.email);
+      localStorage.setItem("userRole", user.role);
 
       // ✅ Redirect based on role
       if (user.role === "admin") {

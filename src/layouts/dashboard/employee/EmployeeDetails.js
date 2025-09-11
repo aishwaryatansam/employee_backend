@@ -21,6 +21,7 @@ const EmployeeDetails = () => {
   const [timecardData, setTimecardData] = useState([]);
 
   const padTime = (t) => (t && t.match(/^\d{2}:\d{2}$/) ? t + ":00" : t || "00:00:00");
+
   const handleSaveTimesheet = async () => {
     const date = selectedDate;
     const dayData = hourlyDetails[date] || {};
@@ -60,20 +61,30 @@ const EmployeeDetails = () => {
 
   // Fetch backend data (optional, for future use)
   useEffect(() => {
-    const monthToSend = selectedMonth; // API expects 1-12
-    const url = `http://localhost:3001/getHourDetailsByMonth?year=${selectedYear}&month=${monthToSend}`;
-    console.log("Fetching URL:", url);
+    if (!employee?.id) return;
 
-    fetch(url)
+    fetch(
+      `http://localhost:3001/getHourDetailsByMonth?year=${selectedYear}&month=${selectedMonth}&memberId=${employee.id}`
+    )
       .then((res) => res.json())
       .then((data) => {
-        console.log("API response:", data);
         if (data.success && data.data) {
           setTimecardData(data.data);
         }
       })
       .catch((err) => console.error("Fetch error:", err));
-  }, [selectedMonth, selectedYear]);
+  }, [employee, selectedMonth, selectedYear]);
+  useEffect(() => {
+    const email = localStorage.getItem("userEmail"); // Logged-in user's email
+    if (!email) return;
+
+    fetch(`http://localhost:3001/api/members/byEmail?email=${email}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) setEmployee(data.data);
+      })
+      .catch((err) => console.error("Error fetching employee by email:", err));
+  }, []);
 
   // populate popup when opened
   useEffect(() => {
@@ -202,7 +213,12 @@ const EmployeeDetails = () => {
     }
     return count;
   };
-
+  useEffect(() => {
+    fetch(`http://localhost:3001/api/members/${id}`)
+      .then((res) => res.json())
+      .then((member) => setEmployee(member))
+      .catch((err) => console.error("Error fetching employee:", err));
+  }, [id]);
   // For meal break, just say 1hr 1-2pm for now, or customize
   const getMealBreak = () => "1 hr";
   // calculate totals
@@ -259,8 +275,8 @@ const EmployeeDetails = () => {
             <div className="profile-section">
               <img src="https://via.placeholder.com/60" alt="Employee" className="profile-pic" />
               <div className="profile-info">
-                <h2>Ralph Edwards</h2>
-                <p className="role">Product Designer • Hourly</p>
+                <h2>{employee?.fullName || "No name found"}</h2>
+                <p className="role">{employee?.role || "No role found"}</p>
               </div>
               <div className="hours-summary">
                 <p className="total">{total} hrs Total</p>
