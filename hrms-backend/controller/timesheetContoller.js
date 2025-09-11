@@ -1,32 +1,38 @@
 // ➕ Add new employee hour details
 // Example Express controller
 export const addHourDetail = (db) => (req, res) => {
-  const { date, checkIn, checkOut, overtime, status, hourBlocks } = req.body;
+  const { date, checkIn, checkOut, overtime, status, hourBlocks, email } = req.body;
 
-  const query = `
-    INSERT INTO timesheet (date, checkIn, checkOut, overtime, status, hourBlocks)
-    VALUES (?, ?, ?, ?, ?, ?)
-    ON DUPLICATE KEY UPDATE
-      checkIn = VALUES(checkIn),
-      checkOut = VALUES(checkOut),
-      overtime = VALUES(overtime),
-      status = VALUES(status),
-      hourBlocks = VALUES(hourBlocks)
-  `;
+  console.log("Received email:", email); // ✅ debug
 
-  db.query(
-    query,
-    [date, checkIn, checkOut, overtime, status, JSON.stringify(hourBlocks)],
-    (err, result) => {
-      if (err) {
-        console.error("DB Insert Error:", err);
-        return res.json({ success: false, error: err.message });
+  if (!email) return res.json({ success: false, error: "Email missing" });
+
+  db.query("SELECT id FROM members WHERE email = ?", [email], (err, results) => {
+    if (err) return res.status(500).json({ success: false, error: err.message });
+    if (!results.length) return res.json({ success: false, error: "Member not found" });
+
+    const memberId = results[0].id;
+    console.log("Fetched memberId:", memberId); // ✅ debug
+
+    if (!memberId || memberId === 0)
+      return res.json({ success: false, error: "Invalid memberId received" });
+
+    const query = `
+      INSERT INTO timesheet (date, checkIn, checkOut, overtime, status, hourBlocks, memberId)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `;
+
+    db.query(
+      query,
+      [date, checkIn, checkOut, overtime, status, JSON.stringify(hourBlocks || []), memberId],
+      (err, result) => {
+        if (err) return res.status(500).json({ success: false, error: err.message });
+
+        res.json({ success: true, data: result });
       }
-      res.json({ success: true });
-    }
-  );
+    );
+  });
 };
-
 
 // ✏️ Update employee hour details
 export const updateEmployeeHours = (db) => (req, res) => {
@@ -59,15 +65,17 @@ export const updateEmployeeHours = (db) => (req, res) => {
 
 // 📂 Get employee hours for a given month
 export const getHourDetailsByMonth = (db) => (req, res) => {
-  const { year, month } = req.query; // month: 0-11
+  const { year, month, memberId } = req.query; // 👈 include memberId
+  if (!memberId) return res.json({ success: false, error: "memberId required" });
+
   const startDate = `${year}-${String(Number(month) + 1).padStart(2, "0")}-01`;
   const endDate = `${year}-${String(Number(month) + 1).padStart(2, "0")}-31`;
 
   const query = `
     SELECT * FROM timesheet
-    WHERE date BETWEEN ? AND ?;
+    WHERE memberId = ? AND date BETWEEN ? AND ?;
   `;
-  db.query(query, [startDate, endDate], (err, results) => {
+  db.query(query, [memberId, startDate, endDate], (err, results) => {
     if (err) return res.json({ success: false, error: err.message });
     res.json({ success: true, data: results });
   });

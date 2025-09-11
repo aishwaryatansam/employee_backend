@@ -17,7 +17,7 @@ const EmployeeDetails = () => {
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [checkInOut, setCheckInOut] = useState({ checkIn: "", checkOut: "" });
   const [overtimeHours, setOvertimeHours] = useState("");
-  const [employee, setEmployee] = useState([]);
+  const [employee, setEmployee] = useState({});
   const [timecardData, setTimecardData] = useState([]);
 
   const padTime = (t) => (t && t.match(/^\d{2}:\d{2}$/) ? t + ":00" : t || "00:00:00");
@@ -40,7 +40,17 @@ const EmployeeDetails = () => {
         projectTask: details.task || "",
       });
     }
-    const body = { date, checkIn, checkOut, overtime, status, hourBlocks };
+    const email = localStorage.getItem("userEmail");
+    const body = {
+      date,
+      checkIn,
+      checkOut,
+      overtime,
+      status,
+      hourBlocks,
+      email, // ✅ send email
+    };
+
     try {
       const response = await fetch("http://localhost:3001/addHourDetail", {
         method: "POST",
@@ -85,6 +95,20 @@ const EmployeeDetails = () => {
       })
       .catch((err) => console.error("Error fetching employee by email:", err));
   }, []);
+  useEffect(() => {
+    if (!id) return;
+
+    fetch(`http://localhost:3001/api/members/${id}`)
+      .then((res) => res.json())
+      .then((member) => {
+        if (Array.isArray(member) && member.length > 0) {
+          setEmployee(member[0]); // ✅ take first row
+        } else if (member && member.id) {
+          setEmployee(member); // ✅ if already object
+        }
+      })
+      .catch((err) => console.error("Error fetching employee:", err));
+  }, [id]);
 
   // populate popup when opened
   useEffect(() => {
@@ -213,12 +237,7 @@ const EmployeeDetails = () => {
     }
     return count;
   };
-  useEffect(() => {
-    fetch(`http://localhost:3001/api/members/${id}`)
-      .then((res) => res.json())
-      .then((member) => setEmployee(member))
-      .catch((err) => console.error("Error fetching employee:", err));
-  }, [id]);
+
   // For meal break, just say 1hr 1-2pm for now, or customize
   const getMealBreak = () => "1 hr";
   // calculate totals
