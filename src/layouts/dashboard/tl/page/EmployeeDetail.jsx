@@ -24,10 +24,12 @@ const EmployeeDetail = () => {
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [checkInOut, setCheckInOut] = useState({ checkIn: "", checkOut: "" });
+  const hourBlocks = [];
   const [employee, setEmployee] = useState(null);
   const [approvalFilter, setApprovalFilter] = useState("All");
   const members = JSON.parse(localStorage.getItem("tl_team_members")) || [];
   const [employees, setEmployees] = useState([]);
+  const [timecardData, setTimecardData] = useState([]);
   const statusStyles = {
     All: { color: "default", label: "All", icon: <FilterListIcon fontSize="small" /> },
     Approved: { color: "success", label: "Approved", icon: <CheckCircleIcon fontSize="small" /> },
@@ -36,7 +38,7 @@ const EmployeeDetail = () => {
   };
 
   const selectedEmp = members.find((emp) => emp.id === id);
-
+  /*
   localStorage.setItem("employee_hourly_details", JSON.stringify(hourlyDetails));
 
   const navigate = useNavigate();
@@ -86,6 +88,7 @@ const EmployeeDetail = () => {
     window.addEventListener("focus", fetchData);
     return () => window.removeEventListener("focus", fetchData);
   }, []);
+*/
 
   const getAllDatesInMonth = (year, month) => {
     const date = new Date(year, month, 1);
@@ -107,25 +110,61 @@ const EmployeeDetail = () => {
     if (hour === 24) return "12 AM";
     return hour > 12 ? `${hour - 12} PM` : `${hour} AM`;
   };
+  const getWorkHours = (details = {}) => {
+    let count = 0;
+    for (let hour = 10; hour <= 18; hour++) {
+      if (hour === 13) continue; // lunch break
+      const hd = details[hour];
+      if (hd && hd.type) count++;
+    }
+    return count;
+  };
 
-  const formatDate = (date) =>
-    date.toLocaleDateString("en-US", {
-      weekday: "short",
-      day: "numeric",
-      month: "short",
-    });
-
+  function formatDate(date) {
+    const d = date instanceof Date ? date : new Date(date);
+    const year = d.getFullYear();
+    const month = (d.getMonth() + 1).toString().padStart(2, "0");
+    const day = d.getDate().toString().padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  }
   const openEditPopup = (date) => {
     const formatted = formatDate(date);
     setSelectedDate(formatted);
-    setFormMode(dayStatus[formatted] || "Work");
 
-    // Load existing checkInOut if exists
-    const saved = hourlyDetails[formatted]?._checkInOut || {};
-    setCheckInOut({
-      checkIn: saved.checkIn || "",
-      checkOut: saved.checkOut || "",
-    });
+    // Get existing data for this date
+    const entry = timecardData.find((d) => formatDate(d.date) === formatted);
+
+    if (entry) {
+      setCheckInOut({
+        checkIn: entry.checkIn || "",
+        checkOut: entry.checkOut || "",
+      });
+      setOvertimeHours(entry.overtime || 0);
+      setFormMode(entry.status || "Work");
+
+      try {
+        const parsed = JSON.parse(entry.hourBlocks || "[]");
+        const mapped = {};
+        parsed.forEach((block) => {
+          mapped[block.hour] = {
+            type: block.projectType || "",
+            name: block.projectName || "",
+            phase: block.projectPhase || "",
+            task: block.projectTask || "",
+          };
+        });
+        setHourlyDetails((prev) => ({ ...prev, [formatted]: mapped }));
+      } catch (err) {
+        console.error("Error parsing hourBlocks:", err);
+        setHourlyDetails((prev) => ({ ...prev, [formatted]: {} }));
+      }
+    } else {
+      // No data yet for this date
+      setCheckInOut({ checkIn: "", checkOut: "" });
+      setOvertimeHours(0);
+      setFormMode("Work");
+      setHourlyDetails((prev) => ({ ...prev, [formatted]: {} }));
+    }
 
     setShowPopupForm(true);
   };
@@ -156,7 +195,20 @@ const EmployeeDetail = () => {
     const overtime = typeof dayData.overtime === "number" ? dayData.overtime : 0;
     return `${hours}hr`;
   };
+  useEffect(() => {
+    if (!employee?.id) return;
 
+    fetch(
+      `http://localhost:3001/getHourDetailsByMonth?year=${selectedYear}&month=${selectedMonth}&memberId=${employee.id}`
+    )
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && data.data) {
+          setTimecardData(data.data);
+        }
+      })
+      .catch((err) => console.error("Fetch error:", err));
+  }, [employee, selectedMonth, selectedYear]);
   const calculateDetails = (dayData) => {
     if (!dayData) return "-";
     const tasks = new Set();
@@ -183,7 +235,63 @@ const EmployeeDetail = () => {
       };
     });
   };
+  useEffect(() => {
+    if (!id) return;
 
+    fetch(`http://localhost:3001/api/member/${id}`)
+      .then((res) => res.json())
+      .then((emp) => {
+        if (emp) {
+          setEmployee({
+            id: emp.id,
+            name: emp.fullName, // map correctly
+            role: emp.role,
+            type: emp.department,
+            email: emp.email,
+            phone: emp.phone,
+          });
+        }
+      })
+      .catch((err) => console.error("Error fetching employee:", err));
+  }, [id]);
+
+  const calculateTotals = () => {
+    let total = 0;
+    let regular = 0;
+    let overtime = 0;
+    let holiday = 0;
+
+    timecardData.forEach((row) => {
+      if (row.status === "Leave" || row.status === "Holiday") {
+        // count a leave/holiday as 8 hrs (adjust if your org uses a different rule)
+        holiday += 1;
+
+        return;
+      }
+
+      // Parse hourBlocks and count worked hours
+      let worked = 0;
+      try {
+        const hourBlocks = JSON.parse(row.hourBlocks || "[]");
+        worked = hourBlocks.filter(
+          (block) =>
+            block.projectType || block.projectName || block.projectPhase || block.projectTask
+        ).length;
+      } catch (err) {
+        console.error("Error parsing hourBlocks:", err);
+      }
+
+      const ot = parseFloat(row.overtime) || 0;
+
+      total += worked + ot;
+      regular += worked;
+      overtime += ot;
+    });
+
+    return { total, regular, overtime, holiday };
+  };
+
+  const { total, regular, overtime, holiday } = calculateTotals();
   useEffect(() => {
     if (formMode === "Leave" && selectedDate) {
       setHourlyDetails((prev) => ({
@@ -241,6 +349,47 @@ const EmployeeDetail = () => {
   const approvedPercent = (approvedHours / totalHours) * 100 || 0;
   const overtimePercent = (overtimeHours / totalHours) * 100 || 0;
   const pendingPercent = (pendingHours / totalHours) * 100 || 0;
+  useEffect(() => {
+    if (!showPopupForm || !selectedDate || !timecardData) return;
+
+    // find record for selectedDate
+    const entry = timecardData.find(
+      (d) => new Date(d.date).toISOString().slice(0, 10) === selectedDate
+    );
+
+    if (entry) {
+      // check-in / check-out
+      setCheckInOut({
+        checkIn: entry.checkIn || "",
+        checkOut: entry.checkOut || "",
+      });
+
+      // overtime + status
+      setOvertimeHours(entry.overtime || 0);
+      setFormMode(entry.status || "Work");
+
+      // hourBlocks parsing
+      try {
+        const parsed = JSON.parse(entry.hourBlocks || "[]");
+        const mapped = {};
+        parsed.forEach((block) => {
+          mapped[block.hour] = {
+            type: block.projectType || "",
+            name: block.projectName || "",
+            phase: block.projectPhase || "",
+            task: block.projectTask || "",
+          };
+        });
+
+        setHourlyDetails((prev) => ({
+          ...prev,
+          [selectedDate]: mapped,
+        }));
+      } catch (err) {
+        console.error("Error parsing hourBlocks:", err);
+      }
+    }
+  }, [showPopupForm, selectedDate, timecardData]);
 
   return (
     <>
@@ -275,11 +424,10 @@ const EmployeeDetail = () => {
             </div>
             <div className="hours-summary">
               <p className="total">{totalHours} hrs Total</p>
-              <p>{regularHours} hrs Regular</p>
-              <p>{overtimeHours} hrs Overtime</p>
-              <p>
-                {holidayHours} hrs /{holidayDays} day Holiday
-              </p>
+
+              <p>{regular} hrs Regular</p>
+              <p>{overtime} hrs Overtime</p>
+              <p>{holiday} Holiday</p>
               <p>
                 {leaveHours} hrs/{leaveDays} day leave
               </p>
@@ -350,27 +498,8 @@ const EmployeeDetail = () => {
               </Select>
             </FormControl>
           </Box>
-
           {activeTab === "timecard" && (
             <div className="timecard-view">
-              <Box className="filter-bar" display="flex" alignItems="center" gap={2} mb={2}>
-                <FormControl size="small" sx={{ minWidth: 200 }}>
-                  <InputLabel id="approval-filter-label">Filter by Approval</InputLabel>
-                  <Select
-                    labelId="approval-filter-label"
-                    id="approval-filter"
-                    value={approvalFilter}
-                    label="Filter by Approval"
-                    onChange={(e) => setApprovalFilter(e.target.value)}
-                  >
-                    <MenuItem value="All">All</MenuItem>
-                    <MenuItem value="Approved">Approved</MenuItem>
-                    <MenuItem value="Rejected">Rejected</MenuItem>
-                    <MenuItem value="Pending">Pending</MenuItem>
-                  </Select>
-                </FormControl>
-              </Box>
-
               <table className="table">
                 <thead>
                   <tr>
@@ -378,70 +507,42 @@ const EmployeeDetail = () => {
                     <th>Check-in</th>
                     <th>Check-out</th>
                     <th>Meal Break</th>
-                    <th>Overtime Hours</th>
-                    <th>Regular Hours</th>
+                    <th>Work Hours</th>
+                    <th>Overtime</th>
                     <th>Approval</th>
                     <th>Details</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {daysInMonth
-                    .filter((date) => {
-                      const formatted = formatDate(date);
-                      const currentApproval = dayStatus[formatted]?.approval || "Pending";
-
-                      if (approvalFilter === "All") return true;
-                      return currentApproval === approvalFilter;
-                    })
-
-                    .map((date, index) => {
-                      const formatted = formatDate(date);
-                      const statusObj = dayStatus[formatted];
-                      const status = typeof statusObj?.status === "string" ? statusObj.status : "-";
-                      const approval =
-                        typeof statusObj?.approval === "string" ? statusObj.approval : "Pending";
-                      const overtime = calculateOvertime(hourlyDetails[formatted]);
-
-                      return (
-                        <tr key={index}>
-                          <td>{formatted}</td>
-                          <td>{hourlyDetails[formatted]?._checkInOut?.checkIn || "-"}</td>
-                          <td>{hourlyDetails[formatted]?._checkInOut?.checkOut || "-"}</td>
-
-                          <td>{calculateMealBreak(hourlyDetails[formatted])}</td>
-                          <td>
-                            {status === "Work" && hourlyDetails[formatted]?.overtime > 0
-                              ? hourlyDetails[formatted].overtime
-                              : "-"}
-                          </td>
-                          <td>{calculateWorkHours(hourlyDetails[formatted])}</td>
-
-                          <td>
-                            {status === "Leave" ? (
-                              "-"
-                            ) : (
-                              <span
-                                className={
-                                  approval === "Approved"
-                                    ? "status-approved"
-                                    : approval === "Rejected"
-                                    ? "status-rejected"
-                                    : "status-pending"
-                                }
-                              >
-                                {approval}
-                              </span>
-                            )}
-                          </td>
-                          <td>{calculateDetails(hourlyDetails[formatted])}</td>
-                        </tr>
-                      );
-                    })}
+                  {timecardData.map((row) => {
+                    const hourBlocks = JSON.parse(row.hourBlocks || "[]"); // parse JSON string
+                    const details = row.hourBlocks || "-";
+                    return (
+                      <tr key={row.id}>
+                        <td>{formatDate(row.date)}</td> {/* Date */}
+                        <td>{row.checkIn}</td> {/* Check-in */}
+                        <td>{row.checkOut}</td> {/* Check-out */}
+                        <td>{row.mealBreak || "1 hr"}</td> {/* Meal Break */}
+                        <td>{getWorkHours(hourBlocks)}</td> {/* Work Hours */}
+                        <td>{row.overtime || 0}</td> {/* Overtime */}
+                        <td>{row.approval || "Pending"}</td> {/* Approval */}
+                        <td>
+                          {JSON.parse(row.hourBlocks || "[]").map((block, idx) => (
+                            <div key={idx}>
+                              Hour: {block.hour},Project Type: {block.projectType || "-"},Project
+                              Name: {block.projectName || "-"},Project Phase:{" "}
+                              {block.projectPhase || "-"}, Project Task: {block.projectTask || "-"}
+                            </div>
+                          ))}
+                        </td>
+                        {/* Details */}
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
           )}
-
           {activeTab === "timeline" && (
             <div className="timeline-view">
               <Box
@@ -504,6 +605,11 @@ const EmployeeDetail = () => {
                 })
                 .map((date, index) => {
                   const formatted = formatDate(date);
+
+                  const entry = timecardData.find(
+                    (d) => formatDate(d.date) === formatted // ✅ fixed
+                  );
+                  const hourBlocks = entry ? JSON.parse(entry.hourBlocks || "[]") : [];
                   return (
                     <div className="timeline-row" key={index}>
                       <div className="date-cell">{formatted}</div>
@@ -511,12 +617,17 @@ const EmployeeDetail = () => {
                         const hour = 10 + hourIdx;
                         const hourData = hourlyDetails[formatted]?.[hour];
                         const isLeave = dayStatus[formatted]?.status === "Leave";
-                        const isFilled = hourData && Object.keys(hourData).length > 0;
+                        const block = hourBlocks.find((b) => b.hour === hour);
+                        const isFilled =
+                          block &&
+                          (block.projectType ||
+                            block.projectName ||
+                            block.projectPhase ||
+                            block.projectTask);
 
                         let colorClass = "";
                         if (hour === 13) colorClass = "break";
-                        else if (dayStatus[formatted]?.status === "Holiday") colorClass = "holiday";
-                        else if (dayStatus[formatted]?.status === "Leave") colorClass = "leave";
+                        else if (isLeave) colorClass = "leave";
                         else if (isFilled) colorClass = "work";
 
                         return (
@@ -524,12 +635,12 @@ const EmployeeDetail = () => {
                             key={hourIdx}
                             className={`hour-cell ${colorClass}`}
                             title={
-                              isFilled
-                                ? `${hourData.name || "-"} (${hourData.phase || "-"})`
-                                : isLeave
+                              isLeave
                                 ? "Leave"
                                 : hour === 13
                                 ? "Lunch Break"
+                                : isFilled
+                                ? `${block.projectName || "-"} (${block.projectPhase || "-"})`
                                 : ""
                             }
                           />

@@ -109,6 +109,46 @@ const EmployeeDetails = () => {
       })
       .catch((err) => console.error("Error fetching employee:", err));
   }, [id]);
+  useEffect(() => {
+    if (showPopupForm && selectedDate && employee?.email) {
+      fetch(`http://localhost:3001/api/hourDetail?date=${selectedDate}&email=${employee.email}`)
+        .then((res) => res.json())
+        .then((res) => {
+          if (res.success && res.data) {
+            const record = res.data;
+
+            setCheckInOut({
+              checkIn: record.checkIn || "",
+              checkOut: record.checkOut || "",
+            });
+
+            setOvertimeHours(record.overtime || 0);
+            setFormMode(record.status || "Work");
+
+            // parse hourly blocks
+            try {
+              const parsed = JSON.parse(record.hourBlocks || "{}");
+              setHourlyDetails((prev) => ({
+                ...prev,
+                [selectedDate]: parsed,
+              }));
+            } catch (err) {
+              console.error("Invalid hourBlocks JSON", err);
+            }
+          } else {
+            // reset form if no record exists
+            setCheckInOut({ checkIn: "", checkOut: "" });
+            setOvertimeHours(0);
+            setFormMode("Work");
+            setHourlyDetails((prev) => ({
+              ...prev,
+              [selectedDate]: {},
+            }));
+          }
+        })
+        .catch((err) => console.error("Error fetching hour detail:", err));
+    }
+  }, [showPopupForm, selectedDate, employee]);
 
   // populate popup when opened
   useEffect(() => {
@@ -181,19 +221,48 @@ const EmployeeDetails = () => {
     const day = d.getDate().toString().padStart(2, "0");
     return `${year}-${month}-${day}`;
   }
-
   const openEditPopup = (date) => {
     const formatted = formatDate(date);
     setSelectedDate(formatted);
-    setFormMode(dayStatus[formatted] || "Work");
-    const saved = hourlyDetails[formatted]?._checkInOut || {};
-    setCheckInOut({
-      checkIn: saved.checkIn || "",
-      checkOut: saved.checkOut || "",
-    });
-    setOvertimeHours(hourlyDetails[formatted]?._overtime || "");
+
+    // Get existing data for this date
+    const entry = timecardData.find((d) => formatDate(d.date) === formatted);
+
+    if (entry) {
+      setCheckInOut({
+        checkIn: entry.checkIn || "",
+        checkOut: entry.checkOut || "",
+      });
+      setOvertimeHours(entry.overtime || 0);
+      setFormMode(entry.status || "Work");
+
+      try {
+        const parsed = JSON.parse(entry.hourBlocks || "[]");
+        const mapped = {};
+        parsed.forEach((block) => {
+          mapped[block.hour] = {
+            type: block.projectType || "",
+            name: block.projectName || "",
+            phase: block.projectPhase || "",
+            task: block.projectTask || "",
+          };
+        });
+        setHourlyDetails((prev) => ({ ...prev, [formatted]: mapped }));
+      } catch (err) {
+        console.error("Error parsing hourBlocks:", err);
+        setHourlyDetails((prev) => ({ ...prev, [formatted]: {} }));
+      }
+    } else {
+      // No data yet for this date
+      setCheckInOut({ checkIn: "", checkOut: "" });
+      setOvertimeHours(0);
+      setFormMode("Work");
+      setHourlyDetails((prev) => ({ ...prev, [formatted]: {} }));
+    }
+
     setShowPopupForm(true);
   };
+
   const closeEditPopup = () => {
     setShowPopupForm(false);
     setSelectedDate(null);

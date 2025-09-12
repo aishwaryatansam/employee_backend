@@ -34,6 +34,8 @@ export const addHourDetail = (db) => (req, res) => {
   });
 };
 
+// Get existing hour detail by date + email
+
 // ✏️ Update employee hour details
 export const updateEmployeeHours = (db) => (req, res) => {
   const { userId, date } = req.params;

@@ -7,10 +7,12 @@ import {
   deleteMember,
   updateMember,
   getMembersByEmail,
+  getMemberById,
 } from "./controller/memberController.js";
 import { createHrProjects, assignTeamLead } from "./controller/hrController.js";
 import { addHourDetail, getHourDetailsByMonth } from "./controller/timesheetContoller.js";
 import { addProjects } from "./controller/projectController.js";
+
 const app = express();
 app.use(express.json());
 app.use(cors());
@@ -32,6 +34,7 @@ db.connect((err) => {
 
 app.post("/members", addMember(db));
 app.get("/api/members", getMembers(db));
+app.get("/api/member/:id", getMemberById(db));
 app.delete("/api/members/:id", deleteMember(db));
 app.put("/api/members/:id", updateMember(db));
 app.post("/addHourDetail", addHourDetail(db));

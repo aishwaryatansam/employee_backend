@@ -19,59 +19,54 @@ const Timesheet = () => {
   const { id } = useParams(); // ✅ This gives you the `id` from URL like /timesheet/:id
   const today = new Date().getDate();
   const [selectedDate, setSelectedDate] = useState(today);
-
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth()); // 0 = Jan
-  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const selectedMonth = new Date().getMonth() + 1; // 0 = Jan
+  const selectedYear = new Date().getFullYear();
   const getDaysInMonth = (month, year) => new Date(year, month + 1, 0).getDate();
   const [employeeData, setEmployeeData] = useState([]);
-  const [hourlyData, setHourlyData] = useState({});
+  const [hourDetails, setHourDetails] = useState([]);
   /*
   useEffect(() => {
     const allData = JSON.parse(localStorage.getItem("timesheet_entries") || "[]");
     console.log("All timesheet entries:", allData);
   }, []);
-*/
-  useEffect(() => {
-    const monthToSend = selectedMonth + 1; // backend expects 1–12
-    const url = `http://localhost:3001/getHourDetailsByMonth?year=${selectedYear}&month=${monthToSend}`;
-    console.log("Fetching:", url);
-
-    fetch(url)
+*/ useEffect(() => {
+    fetch("http://localhost:3001/api/members")
       .then((res) => res.json())
       .then((data) => {
-        if (data.success && Array.isArray(data.data)) {
-          const timesheetMap = {};
-
-          data.data.forEach((entry) => {
-            const dateObj = new Date(entry.date);
-            const day = dateObj.getDate();
-
-            const empId = entry.employeeId; // make sure API sends employeeId
-
-            if (!timesheetMap[empId]) {
-              timesheetMap[empId] = {
-                id: empId,
-                name: entry.employeeName || "Unknown", // fallback if API doesn’t send name
-                role: entry.role || "Employee",
-                type: entry.type || "Full-time",
-                timesheet: {},
-              };
-            }
-
-            const regular = calculateHours(entry.checkIn, entry.checkOut);
-            const overtime = parseFloat(entry.overtime || 0);
-            const total = regular + overtime;
-
-            timesheetMap[empId].timesheet[day] = { regular, overtime, total };
-          });
-
-          setEmployees(Object.values(timesheetMap));
+        if (Array.isArray(data)) {
+          const mapped = data
+            .filter((user) => user.role?.toLowerCase() === "employee")
+            .map((user) => ({
+              id: user.id,
+              name: user.fullName, // 👈 renamed to `name`
+              role: "Employee",
+              type: user.department || "-",
+            }));
+          setEmployees(mapped);
         }
       })
-      .catch((err) => console.error("API error:", err));
-  }, [selectedMonth, selectedYear]);
+      .catch((err) => console.error("Error fetching members:", err));
+  }, []);
+
+  // Fetch members once
+
+  useEffect(() => {
+    if (id) {
+      const url = `http://localhost:3001/getHourDetailsByMonth?year=${selectedYear}&month=${selectedMonth}&memberId=${id}`;
+      console.log("Fetching hour details from:", url);
+
+      fetch(url)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success) {
+            setHourDetails(data.data);
+          }
+        })
+        .catch((err) => console.error("Error fetching hour details:", err));
+    }
+  }, [id, selectedYear, selectedMonth]);
 
   // helper
   function calculateHours(checkIn, checkOut) {
@@ -163,21 +158,19 @@ const Timesheet = () => {
 */
   }
 
-  const handleRowClick = (index) => {
-    navigate(`/employee/${index}`);
+  const handleRowClick = (emp) => {
+    console.log("Clicked Employee Object:", emp); // Log the entire employee object
+    console.log("Clicked Employee ID:", emp.id); // Log emp.id to check if it's available
+    navigate(`/employee/${emp.id}`); // Navigate to the employee details page
   };
+
   const leaveDays = [5, 18, 27]; // e.g. 5th, 18th, 27th of selected month
   // Dummy leave days for demo (could be pulled from DB later)
   const header = ["Name", "Role", "Type", "Regular", "Overtime", "Total Hours"];
   /*  const header = ["Name", "Role", "Type", "Regular", "Overtime", "Sick Leave", "Total Hours"];*/
-  const handleCreateReport = () => {
-    if (!selectedDate) {
-      toast.warning("Please select a date to generate a report.");
-      return;
-    }
 
-    {
-      /*const rows = employees.map((emp) => {
+  {
+    /*const rows = employees.map((emp) => {
   const data = emp.timesheet?.[selectedDate] || {};
   return [
     emp.name,
@@ -190,9 +183,26 @@ const Timesheet = () => {
   ];
 });
 */
+  }
+  const handleCreateReport = () => {
+    if (!selectedDate) {
+      toast.warning("Please select a date to generate a report.");
+      return;
     }
 
-    const csvContent = [header, ...rows].map((row) => row.join(",")).join("\n");
+    const csvContent = employees
+      .map((emp) => {
+        const data = emp.timesheet?.[selectedDate.toString()] || {};
+        return [
+          emp.name,
+          emp.role,
+          emp.type,
+          data.regular || "-",
+          data.overtime ? `${data.overtime} Hours` : "-",
+          data.total ? `${data.total} Hours` : "-",
+        ].join(",");
+      })
+      .join("\n");
 
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
@@ -401,7 +411,11 @@ const Timesheet = () => {
                     .map((emp, i) => {
                       const dayData = emp.timesheet?.[selectedDate];
                       return (
-                        <tr key={i} onClick={() => handleRowClick(i)} className="clickable-row">
+                        <tr
+                          key={emp.id}
+                          onClick={() => handleRowClick(emp)}
+                          style={{ cursor: "pointer" }}
+                        >
                           <td>
                             <p className="name">{emp.name}</p>
                             <p className="role">{emp.role}</p>

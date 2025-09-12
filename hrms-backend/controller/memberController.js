@@ -57,6 +57,24 @@ export const getMembers = (db) => (req, res) => {
     res.json(results);
   });
 };
+export const getMemberById = (db) => (req, res) => {
+  const { id } = req.params;
+  const sql = `SELECT * FROM members WHERE id = ?`;
+
+  db.query(sql, [id], (err, results) => {
+    if (err) {
+      console.error("DB error:", err);
+      res.status(500).json({ error: err.message });
+      return;
+    }
+
+    if (results.length > 0) {
+      res.json(results[0]); // return single object
+    } else {
+      res.status(404).json({ message: "Member not found" });
+    }
+  });
+};
 
 // 🗑️ Delete a member
 export const deleteMember = (db) => (req, res) => {
