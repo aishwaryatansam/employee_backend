@@ -25,6 +25,7 @@ const EmployeeDetail = () => {
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [checkInOut, setCheckInOut] = useState({ checkIn: "", checkOut: "" });
   const hourBlocks = [];
+  const [overtimeHours, setOvertimeHours] = useState(0);
   const [employee, setEmployee] = useState(null);
   const [approvalFilter, setApprovalFilter] = useState("All");
   const members = JSON.parse(localStorage.getItem("tl_team_members")) || [];
@@ -35,6 +36,118 @@ const EmployeeDetail = () => {
     Approved: { color: "success", label: "Approved", icon: <CheckCircleIcon fontSize="small" /> },
     Rejected: { color: "error", label: "Rejected", icon: <CancelIcon fontSize="small" /> },
     Pending: { color: "warning", label: "Pending", icon: <HourglassTopIcon fontSize="small" /> },
+  };
+
+  const openEditPopup = (date) => {
+    const formatted = formatDate(date);
+    setSelectedDate(formatted);
+
+    // Get existing data for this date
+    const entry = timecardData.find((d) => formatDate(d.date) === formatted);
+
+    if (entry) {
+      setCheckInOut({
+        checkIn: entry.checkIn || "",
+        checkOut: entry.checkOut || "",
+      });
+      setOvertimeHours(entry.overtime || 0);
+      setFormMode(entry.status || "Work");
+
+      try {
+        const parsed = JSON.parse(entry.hourBlocks || "[]");
+        const mapped = {};
+        parsed.forEach((block) => {
+          mapped[block.hour] = {
+            type: block.projectType || "",
+            name: block.projectName || "",
+            phase: block.projectPhase || "",
+            task: block.projectTask || "",
+          };
+        });
+        setHourlyDetails((prev) => ({ ...prev, [formatted]: mapped }));
+      } catch (err) {
+        console.error("Error parsing hourBlocks:", err);
+        setHourlyDetails((prev) => ({ ...prev, [formatted]: {} }));
+      }
+    } else {
+      // No data yet for this date
+      setCheckInOut({ checkIn: "", checkOut: "" });
+      setOvertimeHours(0);
+      setFormMode("Work");
+      setHourlyDetails((prev) => ({ ...prev, [formatted]: {} }));
+    }
+
+    setShowPopupForm(true);
+  };
+  const padTime = (t) => (t && t.match(/^\d{2}:\d{2}$/) ? t + ":00" : t || "00:00:00");
+  const handleSaveTimesheet = async () => {
+    const date = selectedDate;
+    const dayData = hourlyDetails[date] || {};
+    const status = formMode;
+    const checkIn = padTime(checkInOut.checkIn);
+    const checkOut = padTime(checkInOut.checkOut);
+    const overtime = parseFloat(overtimeHours) || 0;
+    const hourBlocks = [];
+    for (let hour = 10; hour <= 18; hour++) {
+      const details = dayData[hour] || {};
+      hourBlocks.push({
+        hour,
+        projectType: details.type || "",
+        projectName: details.name || "",
+        projectPhase: details.phase || "",
+        projectTask: details.task || "",
+      });
+    }
+    const email = localStorage.getItem("userEmail");
+    const body = {
+      date,
+      checkIn,
+      checkOut,
+      overtime,
+      status,
+      hourBlocks,
+      email, // ✅ send email
+    };
+
+    try {
+      const response = await fetch("http://localhost:3001/addHourDetail", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const result = await response.json();
+      if (result.success) {
+        alert("✅ Timesheet saved successfully!");
+      } else {
+        alert("❌ Error: " + (result.error || "Could not save"));
+      }
+    } catch (e) {
+      console.error("Save failed:", e);
+      alert("⚠️ Network error! Please try again.");
+    }
+  };
+  const saveApprovalStatusToBackend = async (date, approvalStatus) => {
+    try {
+      const email = localStorage.getItem("userEmail"); // or memberId depending on your API
+      const response = await fetch("http://localhost:3001/updateApprovalStatus", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          date,
+          approval: approvalStatus,
+          email, // or memberId
+        }),
+      });
+      const result = await response.json();
+      if (!result.success) {
+        alert("Failed to update approval status: " + (result.error || "Unknown error"));
+      }
+    } catch (error) {
+      console.error("Error updating approval status:", error);
+      alert("Network error while updating approval status. Please try again.");
+    }
   };
 
   const selectedEmp = members.find((emp) => emp.id === id);
@@ -127,47 +240,6 @@ const EmployeeDetail = () => {
     const day = d.getDate().toString().padStart(2, "0");
     return `${year}-${month}-${day}`;
   }
-  const openEditPopup = (date) => {
-    const formatted = formatDate(date);
-    setSelectedDate(formatted);
-
-    // Get existing data for this date
-    const entry = timecardData.find((d) => formatDate(d.date) === formatted);
-
-    if (entry) {
-      setCheckInOut({
-        checkIn: entry.checkIn || "",
-        checkOut: entry.checkOut || "",
-      });
-      setOvertimeHours(entry.overtime || 0);
-      setFormMode(entry.status || "Work");
-
-      try {
-        const parsed = JSON.parse(entry.hourBlocks || "[]");
-        const mapped = {};
-        parsed.forEach((block) => {
-          mapped[block.hour] = {
-            type: block.projectType || "",
-            name: block.projectName || "",
-            phase: block.projectPhase || "",
-            task: block.projectTask || "",
-          };
-        });
-        setHourlyDetails((prev) => ({ ...prev, [formatted]: mapped }));
-      } catch (err) {
-        console.error("Error parsing hourBlocks:", err);
-        setHourlyDetails((prev) => ({ ...prev, [formatted]: {} }));
-      }
-    } else {
-      // No data yet for this date
-      setCheckInOut({ checkIn: "", checkOut: "" });
-      setOvertimeHours(0);
-      setFormMode("Work");
-      setHourlyDetails((prev) => ({ ...prev, [formatted]: {} }));
-    }
-
-    setShowPopupForm(true);
-  };
 
   const closeEditPopup = () => {
     setShowPopupForm(false);
@@ -303,7 +375,7 @@ const EmployeeDetail = () => {
   // Calculate total, regular, overtime, and holiday hours
   let totalHours = 0;
   let regularHours = 0;
-  let overtimeHours = 0;
+  let localOvertimeHours = 0;
   let holidayHours = 0;
   let holidayDays = 0;
   let leaveDays = 0;
@@ -337,7 +409,7 @@ const EmployeeDetail = () => {
       leaveDays += 1;
     } else if (status === "Work") {
       regularHours += workHourCount;
-      overtimeHours += overtime;
+      localOvertimeHours += overtime;
     }
 
     if (approval === "Approved") approvedHours += total;
@@ -861,6 +933,7 @@ const EmployeeDetail = () => {
                         _checkInOut: checkInOut,
                       },
                     }));
+                    handleSaveTimesheet();
                     closeEditPopup();
                   }}
                 >
@@ -877,6 +950,7 @@ const EmployeeDetail = () => {
                         status: formMode,
                       },
                     }));
+                    saveApprovalStatusToBackend(selectedDate, "Approved");
                     closeEditPopup();
                   }}
                 >
@@ -893,6 +967,7 @@ const EmployeeDetail = () => {
                         status: formMode,
                       },
                     }));
+                    saveApprovalStatusToBackend(selectedDate, "Rejected");
                     closeEditPopup();
                   }}
                 >

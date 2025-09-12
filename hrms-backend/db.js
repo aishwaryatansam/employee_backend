@@ -10,8 +10,9 @@ import {
   getMemberById,
 } from "./controller/memberController.js";
 import { createHrProjects, assignTeamLead } from "./controller/hrController.js";
-import { addHourDetail, getHourDetailsByMonth } from "./controller/timesheetContoller.js";
+import { addHourDetail, getHourDetailsByMonth, updateApprovalStatus } from "./controller/timesheetContoller.js";
 import { addProjects } from "./controller/projectController.js";
+
 
 const app = express();
 app.use(express.json());
@@ -31,7 +32,7 @@ db.connect((err) => {
   }
   console.log("Connected to MySQL database");
 });
-
+app.post("/updateApprovalStatus", updateApprovalStatus(db));
 app.post("/members", addMember(db));
 app.get("/api/members", getMembers(db));
 app.get("/api/member/:id", getMemberById(db));

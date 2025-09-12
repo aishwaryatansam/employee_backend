@@ -18,8 +18,8 @@ export const addHourDetail = (db) => (req, res) => {
       return res.json({ success: false, error: "Invalid memberId received" });
 
     const query = `
-      INSERT INTO timesheet (date, checkIn, checkOut, overtime, status, hourBlocks, memberId)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO timesheet (date, checkIn, checkOut, overtime, status, hourBlocks, memberId, ApprovalStatus)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
     db.query(
@@ -81,4 +81,24 @@ export const getHourDetailsByMonth = (db) => (req, res) => {
     if (err) return res.json({ success: false, error: err.message });
     res.json({ success: true, data: results });
   });
+};
+
+export const updateApprovalStatus = (db) => (req, res) => {
+  const { userId, date } = req.params;
+  const { approval } = req.body;
+
+  const sql = `
+    UPDATE timesheet
+    SET approval = ?
+    WHERE memberId = ? AND date = ?
+  `;
+
+  db.query(
+    sql,
+    [approval, userId, date],
+    (err) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ success: true });
+    }
+  );
 };
