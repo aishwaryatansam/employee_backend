@@ -18,8 +18,8 @@ export const addHourDetail = (db) => (req, res) => {
       return res.json({ success: false, error: "Invalid memberId received" });
 
     const query = `
-      INSERT INTO timesheet (date, checkIn, checkOut, overtime, status, hourBlocks, memberId, ApprovalStatus)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO timesheet (date, checkIn, checkOut, overtime, status, hourBlocks, memberId)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
     `;
 
     db.query(
@@ -83,22 +83,36 @@ export const getHourDetailsByMonth = (db) => (req, res) => {
   });
 };
 
-export const updateApprovalStatus = (db) => (req, res) => {
-  const { userId, date } = req.params;
-  const { approval } = req.body;
+// routes/insertApprovalStatus.js
+export const insertApprovalStatus = (db) => (req, res) => {
+  const { timesheetId } = req.params; // timesheetId from route
+  const { approval } = req.body; // 'Approved' or 'Rejected'
 
-  const sql = `
-    UPDATE timesheet
-    SET approval = ?
-    WHERE memberId = ? AND date = ?
-  `;
+  if (!timesheetId || !approval) {
+    return res.status(400).json({ error: "Missing fields" });
+  }
 
-  db.query(
-    sql,
-    [approval, userId, date],
-    (err) => {
-      if (err) return res.status(500).json({ error: err.message });
-      res.json({ success: true });
-    }
-  );
+  // Step 1: Fetch memberId from timesheet table
+  const fetchMemberSql = `SELECT memberId FROM timesheet WHERE id = ?`;
+  db.query(fetchMemberSql, [timesheetId], (err, results) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (results.length === 0) return res.status(404).json({ error: "Timesheet not found" });
+
+    const memberId = results[0].memberId;
+
+    // Step 2: Insert into approvals table
+    const insertSql = `
+      INSERT INTO approvals (timesheetId, memberId, approvalStatus)
+      VALUES (?, ?, ?)
+    `;
+    db.query(insertSql, [timesheetId, memberId, approval], (err2, result) => {
+      if (err2) return res.status(500).json({ error: err2.message });
+
+      res.json({
+        success: true,
+        message: "Approval inserted",
+        approvalId: result.insertId,
+      });
+    });
+  });
 };

@@ -31,6 +31,9 @@ const EmployeeDetail = () => {
   const members = JSON.parse(localStorage.getItem("tl_team_members")) || [];
   const [employees, setEmployees] = useState([]);
   const [timecardData, setTimecardData] = useState([]);
+  const [selectedTimesheetId, setSelectedTimesheetId] = useState(null);
+  const [selectedMemberId, setSelectedMemberId] = useState(null);
+
   const statusStyles = {
     All: { color: "default", label: "All", icon: <FilterListIcon fontSize="small" /> },
     Approved: { color: "success", label: "Approved", icon: <CheckCircleIcon fontSize="small" /> },
@@ -44,8 +47,11 @@ const EmployeeDetail = () => {
 
     // Get existing data for this date
     const entry = timecardData.find((d) => formatDate(d.date) === formatted);
-
+    const timesheetId = entry.id;
+    const memberId = employee.id;
     if (entry) {
+      setSelectedTimesheetId(entry.id);
+      setSelectedMemberId(employee.id);
       setCheckInOut({
         checkIn: entry.checkIn || "",
         checkOut: entry.checkOut || "",
@@ -126,27 +132,28 @@ const EmployeeDetail = () => {
       alert("⚠️ Network error! Please try again.");
     }
   };
-  const saveApprovalStatusToBackend = async (date, approvalStatus) => {
+  const insertApprovalStatus = async (timesheetId, memberId, approvalStatus) => {
+    if (!timesheetId || !memberId) {
+      alert("Timesheet or member ID missing!");
+      return;
+    }
+
     try {
-      const email = localStorage.getItem("userEmail"); // or memberId depending on your API
-      const response = await fetch("http://localhost:3001/updateApprovalStatus", {
+      const response = await fetch(`http://localhost:3001/insertApprovalStatus/${timesheetId}`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          date,
-          approval: approvalStatus,
-          email, // or memberId
-        }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ memberId, approval: approvalStatus }),
       });
+
       const result = await response.json();
-      if (!result.success) {
-        alert("Failed to update approval status: " + (result.error || "Unknown error"));
+      if (result.success) {
+        alert("✅ Approval status saved");
+      } else {
+        alert("❌ Failed: " + (result.error || "Unknown error"));
       }
-    } catch (error) {
-      console.error("Error updating approval status:", error);
-      alert("Network error while updating approval status. Please try again.");
+    } catch (err) {
+      console.error("Error updating approval status:", err);
+      alert("⚠️ Network error while updating approval status. Please try again.");
     }
   };
 
@@ -942,6 +949,12 @@ const EmployeeDetail = () => {
                 <button
                   className="approve-btn"
                   onClick={() => {
+                    if (selectedTimesheetId && selectedMemberId) {
+                      insertApprovalStatus(selectedTimesheetId, selectedMemberId, "Approved");
+                    } else {
+                      alert("Timesheet or member not selected!");
+                    }
+
                     setDayStatus((prev) => ({
                       ...prev,
                       [selectedDate]: {
@@ -950,7 +963,7 @@ const EmployeeDetail = () => {
                         status: formMode,
                       },
                     }));
-                    saveApprovalStatusToBackend(selectedDate, "Approved");
+
                     closeEditPopup();
                   }}
                 >
@@ -959,6 +972,12 @@ const EmployeeDetail = () => {
                 <button
                   className="reject-btn"
                   onClick={() => {
+                    if (selectedTimesheetId && selectedMemberId) {
+                      insertApprovalStatus(selectedTimesheetId, selectedMemberId, "Rejected");
+                    } else {
+                      alert("Timesheet or member not selected!");
+                    }
+
                     setDayStatus((prev) => ({
                       ...prev,
                       [selectedDate]: {
@@ -967,11 +986,11 @@ const EmployeeDetail = () => {
                         status: formMode,
                       },
                     }));
-                    saveApprovalStatusToBackend(selectedDate, "Rejected");
+
                     closeEditPopup();
                   }}
                 >
-                  Reject
+                  Rejected
                 </button>
               </div>
             </div>
