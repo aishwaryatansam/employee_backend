@@ -32,22 +32,42 @@ const Timesheet = () => {
     console.log("All timesheet entries:", allData);
   }, []);
 */ useEffect(() => {
-    fetch("http://localhost:3001/api/members")
+    const email = localStorage.getItem("userEmail"); // Logged-in TL's email
+    if (!email) return;
+
+    // Step 1: Get TL info
+    fetch(`http://localhost:3001/api/members/byEmail?email=${email}`)
       .then((res) => res.json())
       .then((data) => {
-        if (Array.isArray(data)) {
-          const mapped = data
-            .filter((user) => user.role?.toLowerCase() === "employee")
-            .map((user) => ({
-              id: user.id,
-              name: user.fullName, // 👈 renamed to `name`
-              role: "Employee",
-              type: user.department || "-",
-            }));
-          setEmployees(mapped);
+        if (data.success) {
+          const tlData = data.data;
+          console.log("Logged-in TL:", tlData);
+
+          // Step 2: Fetch all members
+          fetch("http://localhost:3001/api/members")
+            .then((res) => res.json())
+            .then((allMembers) => {
+              if (Array.isArray(allMembers)) {
+                const mapped = allMembers
+                  .filter(
+                    (user) =>
+                      user.role?.toLowerCase() === "employee" &&
+                      user.department === tlData.department // ✅ filter by TL's department
+                  )
+                  .map((user) => ({
+                    id: user.id,
+                    name: user.fullName,
+                    role: "Employee",
+                    type: user.department || "-",
+                  }));
+
+                setEmployees(mapped);
+                console.log("Employees in TL's department:", mapped);
+              }
+            });
         }
       })
-      .catch((err) => console.error("Error fetching members:", err));
+      .catch((err) => console.error("Error fetching TL or members:", err));
   }, []);
 
   // Fetch members once

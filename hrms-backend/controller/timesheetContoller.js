@@ -1,9 +1,10 @@
 // ➕ Add new employee hour details
 // Example Express controller
+// ➕ Add new or update employee hour details
 export const addHourDetail = (db) => (req, res) => {
   const { date, checkIn, checkOut, overtime, status, hourBlocks, email } = req.body;
 
-  console.log("Received email:", email); // ✅ debug
+  console.log("Received email:", email);
 
   if (!email) return res.json({ success: false, error: "Email missing" });
 
@@ -12,27 +13,52 @@ export const addHourDetail = (db) => (req, res) => {
     if (!results.length) return res.json({ success: false, error: "Member not found" });
 
     const memberId = results[0].id;
-    console.log("Fetched memberId:", memberId); // ✅ debug
+    console.log("Fetched memberId:", memberId);
 
-    if (!memberId || memberId === 0)
+    if (!memberId || memberId === 0) {
       return res.json({ success: false, error: "Invalid memberId received" });
+    }
 
     const query = `
       INSERT INTO timesheet (date, checkIn, checkOut, overtime, status, hourBlocks, memberId)
       VALUES (?, ?, ?, ?, ?, ?, ?)
+      ON DUPLICATE KEY UPDATE
+        checkIn = VALUES(checkIn),
+        checkOut = VALUES(checkOut),
+        overtime = VALUES(overtime),
+        status = VALUES(status),
+        hourBlocks = VALUES(hourBlocks)
     `;
 
     db.query(
       query,
-      [date, checkIn, checkOut, overtime, status, JSON.stringify(hourBlocks || []), memberId],
+      [
+        date,
+        checkIn || null,
+        checkOut || null,
+        overtime || 0,
+        status || "",
+        JSON.stringify(hourBlocks || []),
+        memberId,
+      ],
       (err, result) => {
-        if (err) return res.status(500).json({ success: false, error: err.message });
+        if (err) {
+          console.error("❌ Error saving timesheet:", err);
+          return res.status(500).json({ success: false, error: err.message });
+        }
 
-        res.json({ success: true, data: result });
+        res.json({
+          success: true,
+          message: result.insertId
+            ? "Timesheet inserted successfully"
+            : "Timesheet updated successfully",
+          data: result,
+        });
       }
     );
   });
 };
+
 
 // Get existing hour detail by date + email
 
