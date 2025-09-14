@@ -49,8 +49,9 @@ app.get("/getHourDetailsByMonth", getHourDetailsByMonth(db));
 app.post("/addProjects", addProjects(db));
 
 app.get("/getProjects", getProjects(db));
-app.put("/updateProject/:project_id", updateProject(db));
+app.put("/updateProject/:id", updateProject(db));
 app.delete("/deleteProject/:project_id", deleteProject(db));
+
 
 const PORT = 3001;
 app.listen(PORT, () => {

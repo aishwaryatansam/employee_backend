@@ -76,18 +76,18 @@ export const getProjects = (db) => (req, res) => {
 
 // Update Project
 export const updateProject = (db) => (req, res) => {
-  const { project_id } = req.params;
+  const { id } = req.params; // <-- use id
   const { projectName, projectType, description, startDate, endDate, completedDate, status, phases } = req.body;
 
   const sql = `
     UPDATE projects 
     SET project_name=?, project_type=?, description=?, start_date=?, end_date=?, completed_date=?, status=?, phases=? 
-    WHERE project_id=?
+    WHERE project_id=?  -- your DB column is still project_id
   `;
 
   db.query(
     sql,
-    [projectName, projectType, description, startDate, endDate, completedDate, status, JSON.stringify(phases), project_id],
+    [projectName, projectType, description, startDate, endDate, completedDate, status, JSON.stringify(phases), id], // <-- use id
     (err, result) => {
       console.log("Update result:", result);
 

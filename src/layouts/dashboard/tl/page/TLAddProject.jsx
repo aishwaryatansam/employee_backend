@@ -54,15 +54,22 @@ function TLAddProject() {
 
   const handleEditProject = (index) => {
     const project = projectsList[index];
-    setProjectName(project.projectName);
-    setDescription(project.description);
-    setStatus(project.status);
-    setStartDate(project.startDate);
-    setEndDate(project.endDate);
-    setCompletedDate(project.completedDate || "");
-    setSelectedMembers(project.assignedMembers);
-    setProjectType(project.projectType);
-    setPhases(project.phases);
+    if (!project || !project.id) {
+      toast.error("⚠️ Cannot edit: Project ID missing");
+      return;
+    }
+
+    console.log("Editing project:", project);
+
+    setProjectName(project.projectName || "");
+    setProjectType(project.projectType || "Billable");
+    setDescription(project.description || "");
+    setStartDate(project.startDate ? project.startDate.split("T")[0] : "");
+    setEndDate(project.endDate ? project.endDate.split("T")[0] : "");
+    setCompletedDate(project.completedDate ? project.completedDate.split("T")[0] : "");
+    setStatus(project.status || "Ongoing");
+    setPhases(project.phases || [{ phaseName: "", tasks: [{ taskName: "", assignedTo: "" }] }]);
+
     setIsEditing(true);
     setEditingIndex(index);
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -99,7 +106,6 @@ function TLAddProject() {
       toast.error("❌ " + err.message);
     }
   };
-
   const handleStatusChange = (value) => {
     setStatus(value);
     if (value === "Completed") {
@@ -197,16 +203,19 @@ function TLAddProject() {
 
     try {
       let response;
-      if (isEditing) {
+
+      if (isEditing && editingIndex !== null) {
+        const projectId = projectsList[editingIndex]?.id;
+        if (!projectId) {
+          toast.error("❌ Cannot update: Project ID missing");
+          return;
+        }
         // Update
-        response = await fetch(
-          `http://localhost:3001/updateProject/${projectsList[editingIndex].project_id}`,
-          {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(newProject),
-          }
-        );
+        response = await fetch(`http://localhost:3001/updateProject/${projectId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(newProject),
+        });
       } else {
         // Insert
         response = await fetch("http://localhost:3001/addProjects", {
