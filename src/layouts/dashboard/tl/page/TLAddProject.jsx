@@ -44,6 +44,13 @@ function TLAddProject() {
   const [isEditing, setIsEditing] = useState(false);
   const [editingIndex, setEditingIndex] = useState(null);
   const theme = useTheme();
+  // Instead of reading from localStorage on mount:
+  useEffect(() => {
+    fetch("http://localhost:3001/getProjects")
+      .then((res) => res.json())
+      .then((data) => setProjectsList(data))
+      .catch((err) => console.error("Error fetching projects:", err));
+  }, []);
 
   const handleEditProject = (index) => {
     const project = projectsList[index];
@@ -60,6 +67,39 @@ function TLAddProject() {
     setEditingIndex(index);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
+
+  const handleDeleteProject = async (index) => {
+    const project = projectsList[index];
+    const projectId = project.id || project.project_id; // use whichever exists
+
+    if (!projectId) {
+      toast.error("Project ID not found!");
+      return;
+    }
+
+    if (!window.confirm("Are you sure you want to delete this project?")) return;
+
+    try {
+      const response = await fetch(`http://localhost:3001/deleteProject/${projectId}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to delete project");
+      }
+
+      const data = await response.json();
+      toast.success(data.message);
+
+      // Remove from frontend list
+      const updatedProjects = projectsList.filter((_, i) => i !== index);
+      setProjectsList(updatedProjects);
+    } catch (err) {
+      toast.error("❌ " + err.message);
+    }
+  };
+
   const handleStatusChange = (value) => {
     setStatus(value);
     if (value === "Completed") {
@@ -139,13 +179,11 @@ function TLAddProject() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Basic validation
     if (!projectName || !description || !startDate || !endDate) {
       toast.error("Please fill in all required fields");
       return;
     }
 
-    // Format project data for backend
     const newProject = {
       projectName,
       projectType,
@@ -154,35 +192,49 @@ function TLAddProject() {
       endDate,
       completedDate: completedDate || null,
       status,
-      phases: phases.map((phase) => ({
-        phaseName: phase.phaseName,
-        tasks: phase.tasks.map((task) => ({
-          taskName: task.taskName,
-          assignedTo: task.assignedTo,
-        })),
-      })),
+      phases,
     };
 
     try {
-      const response = await fetch("http://localhost:3001/addProjects", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newProject),
-      });
+      let response;
+      if (isEditing) {
+        // Update
+        response = await fetch(
+          `http://localhost:3001/updateProject/${projectsList[editingIndex].project_id}`,
+          {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(newProject),
+          }
+        );
+      } else {
+        // Insert
+        response = await fetch("http://localhost:3001/addProjects", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(newProject),
+        });
+      }
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to add project");
+        throw new Error(errorData.error || "Request failed");
       }
 
       const data = await response.json();
+      toast.success(data.message);
 
-      toast.success("✅ Project added successfully!");
+      if (isEditing) {
+        // Update locally
+        const updatedProjects = [...projectsList];
+        updatedProjects[editingIndex] = { ...newProject, id: projectsList[editingIndex].id };
+        setProjectsList(updatedProjects);
+      } else {
+        // Insert locally
+        setProjectsList((prev) => [...prev, { ...newProject, id: data.projectId }]);
+      }
 
-      // Update local projects list to reflect new entry
-      setProjectsList((prev) => [...prev, { ...newProject, id: data.projectId }]);
-
-      // Reset form fields
+      // Reset form
       setProjectName("");
       setDescription("");
       setStatus("Ongoing");
@@ -191,6 +243,8 @@ function TLAddProject() {
       setCompletedDate("");
       setProjectType("Billable");
       setPhases([{ phaseName: "", tasks: [{ taskName: "", assignedTo: "" }] }]);
+      setIsEditing(false);
+      setEditingIndex(null);
     } catch (err) {
       toast.error("❌ " + err.message);
     }

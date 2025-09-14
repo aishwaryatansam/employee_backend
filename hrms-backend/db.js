@@ -15,7 +15,7 @@ import {
   getHourDetailsByMonth,
   insertApprovalStatus,
 } from "./controller/timesheetContoller.js";
-import { addProjects } from "./controller/projectController.js";
+import { addProjects, getProjects, updateProject, deleteProject} from "./controller/projectController.js";
 
 const app = express();
 app.use(express.json());
@@ -47,6 +47,11 @@ app.post("/api/assign", assignTeamLead(db));
 app.get("/api/members/byEmail", getMembersByEmail(db));
 app.get("/getHourDetailsByMonth", getHourDetailsByMonth(db));
 app.post("/addProjects", addProjects(db));
+
+app.get("/getProjects", getProjects(db));
+app.put("/updateProject/:project_id", updateProject(db));
+app.delete("/deleteProject/:project_id", deleteProject(db));
+
 const PORT = 3001;
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
