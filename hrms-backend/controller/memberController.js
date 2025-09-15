@@ -1,6 +1,9 @@
+import bcrypt from "bcryptjs";
+
 // controllers/memberController.js
 
-// ➕ Add new member
+//
+/* ➕ Add new member
 export const addMember = (db) => (req, res) => {
   const { fullName, email, phone, empId, department, role, password } = req.body;
 
@@ -16,6 +19,40 @@ export const addMember = (db) => (req, res) => {
     }
     res.json({ success: true, memberId: result.insertId });
   });
+};*/
+export const addMember = (db) => async (req, res) => {
+  const { fullName, email, role, phone, empId, department, password } = req.body;
+
+  try {
+    console.log("Incoming body:", req.body); // 🔍 debug
+
+    if (!password) {
+      return res.status(400).json({ error: "Password is required" });
+    }
+
+    const saltRounds = 10;
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
+
+    console.log("Hashed password:", hashedPassword); // 🔍 check in console
+
+    const sql = `
+      INSERT INTO members (fullName, email, phone, empId, department, role, password)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `;
+
+    const values = [fullName, email, phone, empId, department, role, hashedPassword];
+
+    db.query(sql, values, (err, result) => {
+      if (err) {
+        console.error("Error inserting member:", err);
+        return res.status(500).json({ error: err.message || "Database error" });
+      }
+      res.status(201).json({ message: "Member added successfully" });
+    });
+  } catch (error) {
+    console.error("Error hashing password:", error);
+    res.status(500).json({ error: error.message || "Server error" });
+  }
 };
 
 // controllers/memberController.js
@@ -108,4 +145,43 @@ export const updateMember = (db) => (req, res) => {
     }
     res.json({ success: true });
   });
+};
+
+export const login = (db) => async (req, res) => {
+  const { email, password } = req.body;
+
+  try {
+    const sql = "SELECT * FROM members WHERE email = ?";
+    db.query(sql, [email], async (err, results) => {
+      if (err) return res.status(500).json({ error: "DB error" });
+      if (results.length === 0) return res.status(401).json({ error: "Invalid credentials" });
+
+      const user = results[0];
+
+      let isMatch = false;
+
+      try {
+        // First try bcrypt
+        isMatch = await bcrypt.compare(password, user.password);
+      } catch (e) {
+        isMatch = false;
+      }
+
+      // If bcrypt fails AND the DB password is raw text, check direct match
+      if (!isMatch && user.password === password) {
+        isMatch = true;
+      }
+
+      if (!isMatch) {
+        return res.status(401).json({ error: "Invalid credentials" });
+      }
+
+      res.json({
+        email: user.email,
+        role: user.role,
+      });
+    });
+  } catch (err) {
+    res.status(500).json({ error: "Server error" });
+  }
 };

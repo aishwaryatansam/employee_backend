@@ -8,6 +8,7 @@ import {
   updateMember,
   getMembersByEmail,
   getMemberById,
+  login,
 } from "./controller/memberController.js";
 import { createHrProjects, assignTeamLead } from "./controller/hrController.js";
 import {
@@ -47,7 +48,7 @@ app.post("/api/assign", assignTeamLead(db));
 app.get("/api/members/byEmail", getMembersByEmail(db));
 app.get("/getHourDetailsByMonth", getHourDetailsByMonth(db));
 app.post("/addProjects", addProjects(db));
-
+app.post("/login", login(db));
 app.get("/getProjects", getProjects(db));
 app.put("/updateProject/:id", updateProject(db));
 app.delete("/deleteProject/:project_id", deleteProject(db));
