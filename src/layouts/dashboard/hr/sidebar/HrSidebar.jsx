@@ -56,6 +56,7 @@ const HrSidebar = () => {
           {[
             { to: "/hr/dashboard", icon: "dashboard", label: "HR Dashboard" },
             { to: "/hr/create-project", icon: "add_box", label: "Create Project" },
+            { to: "/hr/create-employee", icon: "add_box", label: "Create Employee" },
             { to: "/hr/company-overview", icon: "business", label: "Company Overview" },
             { to: "/hr/assign-tl", icon: "group_add", label: "Assign TL" },
           ].map(({ to, icon, label }) => (

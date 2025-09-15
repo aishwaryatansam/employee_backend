@@ -2,7 +2,7 @@ import HRDashboard from "layouts/dashboard/hr/dashboard/index";
 import CreateProject from "layouts/dashboard/hr/createproject/createproject";
 import CompanyOverview from "layouts/dashboard/hr/companyoverview/companyoverview";
 import AssignTL from "layouts/dashboard/hr/assigntl/assigntl";
-
+import CreateEmployee from "layouts/dashboard/hr/createemployee/createemployee";
 // @mui icons
 import Icon from "@mui/material/Icon";
 
@@ -22,6 +22,14 @@ const HRroutes = [
     icon: <Icon fontSize="small">add_circle</Icon>,
     route: "/hr/create-project",
     component: <CreateProject />,
+  },
+  {
+    type: "collapse",
+    name: "Create Employee",
+    key: "create-employee",
+    icon: <Icon fontSize="small">add_circle</Icon>,
+    route: "/hr/create-employee",
+    component: <CreateEmployee />,
   },
   {
     type: "collapse",

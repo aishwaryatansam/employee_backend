@@ -52,54 +52,71 @@ export const addProjects = (db) => (req, res) => {
 };
 
 export const getProjects = (db) => (req, res) => {
-  const sql = `
-    SELECT p.*, ph.id AS phase_id, ph.phase_name, t.id AS task_id, t.task_name, t.assigned_to, m.member_name
-    FROM projects p
-    LEFT JOIN phases ph ON p.id = ph.project_id
-    LEFT JOIN tasks t ON ph.id = t.phase_id
-    LEFT JOIN project_members m ON p.id = m.project_id
-  `;
+  const sql = "SELECT * FROM projects";
 
   db.query(sql, (err, rows) => {
     if (err) return res.status(500).json({ error: err.message });
 
-    const projects = {};
-    rows.forEach((row) => {
-      if (!projects[row.id]) {
-        projects[row.id] = {
-          id: row.id,
-          projectName: row.project_name,
-          projectType: row.project_type,
-          description: row.description,
-          startDate: row.start_date,
-          endDate: row.end_date,
-          completedDate: row.completed_date,
-          status: row.status,
-          members: [],
-          phases: [],
-        };
-      }
+    const projects = rows.map((row) => ({
+      id: row.project_id,
+      projectName: row.project_name,
+      projectType: row.project_type,
+      description: row.description,
+      startDate: row.start_date,
+      endDate: row.end_date,
+      completedDate: row.completed_date,
+      status: row.status,
+      phases: JSON.parse(row.phases || "[]"),
+    }));
 
-      if (row.member_name && !projects[row.id].members.includes(row.member_name)) {
-        projects[row.id].members.push(row.member_name);
-      }
+    res.json(projects);
+  });
+};
 
-      if (row.phase_id) {
-        let phase = projects[row.id].phases.find((p) => p.id === row.phase_id);
-        if (!phase) {
-          phase = { id: row.phase_id, phaseName: row.phase_name, tasks: [] };
-          projects[row.id].phases.push(phase);
-        }
-        if (row.task_id) {
-          phase.tasks.push({
-            id: row.task_id,
-            taskName: row.task_name,
-            assignedTo: row.assigned_to,
-          });
-        }
-      }
-    });
 
-    res.json(Object.values(projects));
+// Update Project
+export const updateProject = (db) => (req, res) => {
+  const { id } = req.params; // <-- use id
+  const { projectName, projectType, description, startDate, endDate, completedDate, status, phases } = req.body;
+
+  const sql = `
+    UPDATE projects 
+    SET project_name=?, project_type=?, description=?, start_date=?, end_date=?, completed_date=?, status=?, phases=? 
+    WHERE project_id=?  -- your DB column is still project_id
+  `;
+
+  db.query(
+    sql,
+    [projectName, projectType, description, startDate, endDate, completedDate, status, JSON.stringify(phases), id], // <-- use id
+    (err, result) => {
+      console.log("Update result:", result);
+
+      if (err) return res.status(500).json({ error: err.message });
+
+      if (result.affectedRows === 0) return res.status(404).json({ error: "Project not found" });
+
+      res.json({ message: "✏️ Project updated successfully!" });
+    }
+  );
+};
+
+// Delete Project
+// Delete Project
+export const deleteProject = (db) => (req, res) => {
+  const { project_id } = req.params; // make sure route uses :project_id
+
+  const sql = `DELETE FROM projects WHERE project_id = ?`;
+
+  db.query(sql, [project_id], (err, result) => {
+    if (err) {
+      console.error("Error deleting project:", err);
+      return res.status(500).json({ error: err.message });
+    }
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: "Project not found" });
+    }
+
+    res.json({ message: "🗑️ Project deleted successfully!", project_id });
   });
 };

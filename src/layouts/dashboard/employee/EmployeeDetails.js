@@ -17,10 +17,11 @@ const EmployeeDetails = () => {
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [checkInOut, setCheckInOut] = useState({ checkIn: "", checkOut: "" });
   const [overtimeHours, setOvertimeHours] = useState("");
-  const [employee, setEmployee] = useState([]);
+  const [employee, setEmployee] = useState({});
   const [timecardData, setTimecardData] = useState([]);
 
   const padTime = (t) => (t && t.match(/^\d{2}:\d{2}$/) ? t + ":00" : t || "00:00:00");
+
   const handleSaveTimesheet = async () => {
     const date = selectedDate;
     const dayData = hourlyDetails[date] || {};
@@ -39,7 +40,17 @@ const EmployeeDetails = () => {
         projectTask: details.task || "",
       });
     }
-    const body = { date, checkIn, checkOut, overtime, status, hourBlocks };
+    const email = localStorage.getItem("userEmail");
+    const body = {
+      date,
+      checkIn,
+      checkOut,
+      overtime,
+      status,
+      hourBlocks,
+      email, // ✅ send email
+    };
+
     try {
       const response = await fetch("http://localhost:3001/addHourDetail", {
         method: "POST",
@@ -60,20 +71,84 @@ const EmployeeDetails = () => {
 
   // Fetch backend data (optional, for future use)
   useEffect(() => {
-    const monthToSend = selectedMonth; // API expects 1-12
-    const url = `http://localhost:3001/getHourDetailsByMonth?year=${selectedYear}&month=${monthToSend}`;
-    console.log("Fetching URL:", url);
+    if (!employee?.id) return;
 
-    fetch(url)
+    fetch(
+      `http://localhost:3001/getHourDetailsByMonth?year=${selectedYear}&month=${selectedMonth}&memberId=${employee.id}`
+    )
       .then((res) => res.json())
       .then((data) => {
-        console.log("API response:", data);
         if (data.success && data.data) {
           setTimecardData(data.data);
         }
       })
       .catch((err) => console.error("Fetch error:", err));
-  }, [selectedMonth, selectedYear]);
+  }, [employee, selectedMonth, selectedYear]);
+  useEffect(() => {
+    const email = localStorage.getItem("userEmail"); // Logged-in user's email
+    if (!email) return;
+
+    fetch(`http://localhost:3001/api/members/byEmail?email=${email}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) setEmployee(data.data);
+      })
+      .catch((err) => console.error("Error fetching employee by email:", err));
+  }, []);
+  useEffect(() => {
+    if (!id) return;
+
+    fetch(`http://localhost:3001/api/members/${id}`)
+      .then((res) => res.json())
+      .then((member) => {
+        if (Array.isArray(member) && member.length > 0) {
+          setEmployee(member[0]); // ✅ take first row
+        } else if (member && member.id) {
+          setEmployee(member); // ✅ if already object
+        }
+      })
+      .catch((err) => console.error("Error fetching employee:", err));
+  }, [id]);
+  useEffect(() => {
+    if (showPopupForm && selectedDate && employee?.email) {
+      fetch(`http://localhost:3001/api/hourDetail?date=${selectedDate}&email=${employee.email}`)
+        .then((res) => res.json())
+        .then((res) => {
+          if (res.success && res.data) {
+            const record = res.data;
+
+            setCheckInOut({
+              checkIn: record.checkIn || "",
+              checkOut: record.checkOut || "",
+            });
+
+            setOvertimeHours(record.overtime || 0);
+            setFormMode(record.status || "Work");
+
+            // parse hourly blocks
+            try {
+              const parsed = JSON.parse(record.hourBlocks || "{}");
+              setHourlyDetails((prev) => ({
+                ...prev,
+                [selectedDate]: parsed,
+              }));
+            } catch (err) {
+              console.error("Invalid hourBlocks JSON", err);
+            }
+          } else {
+            // reset form if no record exists
+            setCheckInOut({ checkIn: "", checkOut: "" });
+            setOvertimeHours(0);
+            setFormMode("Work");
+            setHourlyDetails((prev) => ({
+              ...prev,
+              [selectedDate]: {},
+            }));
+          }
+        })
+        .catch((err) => console.error("Error fetching hour detail:", err));
+    }
+  }, [showPopupForm, selectedDate, employee]);
 
   // populate popup when opened
   useEffect(() => {
@@ -146,19 +221,48 @@ const EmployeeDetails = () => {
     const day = d.getDate().toString().padStart(2, "0");
     return `${year}-${month}-${day}`;
   }
-
   const openEditPopup = (date) => {
     const formatted = formatDate(date);
     setSelectedDate(formatted);
-    setFormMode(dayStatus[formatted] || "Work");
-    const saved = hourlyDetails[formatted]?._checkInOut || {};
-    setCheckInOut({
-      checkIn: saved.checkIn || "",
-      checkOut: saved.checkOut || "",
-    });
-    setOvertimeHours(hourlyDetails[formatted]?._overtime || "");
+
+    // Get existing data for this date
+    const entry = timecardData.find((d) => formatDate(d.date) === formatted);
+
+    if (entry) {
+      setCheckInOut({
+        checkIn: entry.checkIn || "",
+        checkOut: entry.checkOut || "",
+      });
+      setOvertimeHours(entry.overtime || 0);
+      setFormMode(entry.status || "Work");
+
+      try {
+        const parsed = JSON.parse(entry.hourBlocks || "[]");
+        const mapped = {};
+        parsed.forEach((block) => {
+          mapped[block.hour] = {
+            type: block.projectType || "",
+            name: block.projectName || "",
+            phase: block.projectPhase || "",
+            task: block.projectTask || "",
+          };
+        });
+        setHourlyDetails((prev) => ({ ...prev, [formatted]: mapped }));
+      } catch (err) {
+        console.error("Error parsing hourBlocks:", err);
+        setHourlyDetails((prev) => ({ ...prev, [formatted]: {} }));
+      }
+    } else {
+      // No data yet for this date
+      setCheckInOut({ checkIn: "", checkOut: "" });
+      setOvertimeHours(0);
+      setFormMode("Work");
+      setHourlyDetails((prev) => ({ ...prev, [formatted]: {} }));
+    }
+
     setShowPopupForm(true);
   };
+
   const closeEditPopup = () => {
     setShowPopupForm(false);
     setSelectedDate(null);
@@ -259,8 +363,8 @@ const EmployeeDetails = () => {
             <div className="profile-section">
               <img src="https://via.placeholder.com/60" alt="Employee" className="profile-pic" />
               <div className="profile-info">
-                <h2>Ralph Edwards</h2>
-                <p className="role">Product Designer • Hourly</p>
+                <h2>{employee?.fullName || "No name found"}</h2>
+                <p className="role">{employee?.role || "No role found"}</p>
               </div>
               <div className="hours-summary">
                 <p className="total">{total} hrs Total</p>
@@ -377,36 +481,55 @@ const EmployeeDetails = () => {
                   ))}
                   <div className="approval-cell">Edit</div>
                 </div>
+
                 {daysInMonth.map((date, index) => {
                   const formatted = formatDate(date);
+
+                  const entry = timecardData.find(
+                    (d) => formatDate(d.date) === formatted // ✅ fixed
+                  );
+
+                  const hourBlocks = entry ? JSON.parse(entry.hourBlocks || "[]") : [];
+
                   return (
                     <div className="timeline-row" key={index}>
                       <div className="date-cell">{formatted}</div>
+
                       {[...Array(9)].map((_, hourIdx) => {
                         const hour = 10 + hourIdx;
-                        const hourData = hourlyDetails[formatted]?.[hour];
-                        const isLeave = dayStatus[formatted] === "Leave";
-                        const isFilled = hourData && Object.keys(hourData).length > 0;
+                        const block = hourBlocks.find((b) => b.hour === hour);
+
+                        const status = entry?.status || "Work";
+                        const isLeave = status === "Leave";
+                        const isFilled =
+                          block &&
+                          (block.projectType ||
+                            block.projectName ||
+                            block.projectPhase ||
+                            block.projectTask);
+
                         let colorClass = "";
                         if (hour === 13) colorClass = "break";
                         else if (isLeave) colorClass = "leave";
                         else if (isFilled) colorClass = "work";
+
                         return (
                           <div
                             key={hourIdx}
                             className={`hour-cell ${colorClass}`}
                             title={
-                              isFilled
-                                ? `${hourData.name || "-"} (${hourData.phase || "-"})`
-                                : isLeave
+                              isLeave
                                 ? "Leave"
                                 : hour === 13
                                 ? "Lunch Break"
+                                : isFilled
+                                ? `${block.projectName || "-"} (${block.projectPhase || "-"})`
                                 : ""
                             }
                           />
                         );
                       })}
+
                       <div className="approval-cell">
                         <button className="icon-btn edit-btn" onClick={() => openEditPopup(date)}>
                           ✎

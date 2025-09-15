@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 // @mui material components
 import Card from "@mui/material/Card";
@@ -13,44 +13,66 @@ import MDButton from "components/MDButton";
 import BasicLayout from "layouts/authentication/components/BasicLayout";
 
 // Images
-import bgImage from "assets/images/bg-sign-in-basic.jpeg";
+import bgImage from "assets/images/background.png";
 import logo from "assets/images/logos/tansamlogo.png";
 
 import { useNavigate } from "react-router-dom";
-import users from "data/users"; // Update path based on your structure
 
 function Basic() {
-  const [empid, setEmpid] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [members, setMembers] = useState([]);
   const navigate = useNavigate();
 
-  const handleLogin = (e) => {
-    e.preventDefault(); // ✅ prevent default form submission
+  // ✅ Fetch members from backend
+  useEffect(() => {
+    fetch("http://localhost:3001/api/members")
+      .then((res) => res.json())
+      .then((data) => setMembers(data))
+      .catch((err) => console.error("Failed to fetch members:", err));
+  }, []);
 
-    const user = users.find((u) => u.empid === empid && u.password === password);
+const handleLogin = async (e) => {
+  e.preventDefault();
 
-    if (user) {
-      // ✅ Set login-related data in localStorage
-      localStorage.setItem("role", user.role);
-      localStorage.setItem("layout", "dashboard");
-      localStorage.setItem("loggedIn", "true"); // optional if you want to protect routes
+  try {
+    const res = await fetch("http://localhost:3001/login", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ email, password }),
+    });
 
-      // ✅ Redirect based on role
-      if (user.role === "admin") {
-        navigate("/dashboard/admin");
-      } else if (user.role === "employee") {
-        navigate("/dashboard");
-      } else if (user.role === "tl") {
-        navigate("/tldashboard");
-      } else if (user.role === "hr") {
-        navigate("/hr/dashboard");
-      } else if (user.role === "ceo") {
-        navigate("/ceo-dashboard");
-      }
-    } else {
-      alert("Invalid EMPID or Password");
+    if (!res.ok) {
+      const errorData = await res.json();
+      alert(errorData.error || "Login failed");
+      return;
     }
-  };
+
+    const data = await res.json();
+
+    // ✅ Store login info
+    localStorage.setItem("userEmail", data.email);
+    localStorage.setItem("userRole", data.role);
+
+    // ✅ Redirect based on role
+    if (data.role === "admin") {
+      navigate("/dashboard/admin");
+    } else if (data.role === "employee") {
+      navigate("/dashboard");
+    } else if (data.role === "tl") {
+      navigate("/tldashboard");
+    } else if (data.role === "hr") {
+      navigate("/hr/dashboard");
+    } else if (data.role === "ceo") {
+      navigate("/ceo-dashboard");
+    }
+  } catch (err) {
+    alert("Login request failed: " + err.message);
+  }
+};
+
 
   return (
     <BasicLayout image={bgImage}>
@@ -75,14 +97,18 @@ function Basic() {
             <img
               src={logo}
               alt="Company Logo"
-              style={{ display: "block", margin: "0px auto 5px auto", width: "60px" }}
+              style={{
+                display: "block",
+                margin: "0px auto 5px auto",
+                width: "60px",
+              }}
             />
             <MDBox mb={2} mt={2}>
               <MDInput
                 type="text"
-                label="EMPID"
-                value={empid}
-                onChange={(e) => setEmpid(e.target.value)}
+                label="Email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 fullWidth
                 size="small"
               />
@@ -98,13 +124,7 @@ function Basic() {
               />
             </MDBox>
             <MDBox mt={3} mb={1}>
-              <MDButton
-                type="submit" // ✅ use type="submit" since wrapped in <form>
-                variant="gradient"
-                color="info"
-                fullWidth
-                size="small"
-              >
+              <MDButton type="submit" variant="gradient" color="info" fullWidth size="small">
                 Login
               </MDButton>
             </MDBox>

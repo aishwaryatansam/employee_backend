@@ -16,11 +16,11 @@ import {
   Alert,
 } from "@mui/material";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
+import HrSidebar from "layouts/dashboard/hr/sidebar/HrSidebar";
+import HrNavbar from "layouts/dashboard/hr/navbar/HrNavbar";
+import DepartmentHoursChart from "layouts/dashboard/ceo/comp/charts/DepartmentHoursChart";
 
-import DashboardNavbar from "examples/Navbars/DashboardNavbar";
-import AdminSidebar from "layouts/dashboard/admin/adminsidebar";
-
-const AddMembers = () => {
+const createemployee = () => {
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
@@ -86,9 +86,9 @@ const AddMembers = () => {
 
   return (
     <Box py={3} px={2} sx={{ display: "flex" }}>
-      <AdminSidebar />
+      <HrSidebar />
       <Box sx={{ ml: "240px", width: "100%" }}>
-        <DashboardNavbar />
+        <HrNavbar />
         <Box sx={{ p: 4 }}>
           <Card
             sx={{
@@ -155,14 +155,15 @@ const AddMembers = () => {
                   />
                 </Grid>
 
+
                 <Grid item xs={12} md={4}>
                   <TextField
                     fullWidth
-                    label="Department (optional)"
+                    label="Team"
                     name="department"
                     value={formData.department}
                     onChange={handleChange}
-                  />
+                  ></TextField>
                 </Grid>
 
                 <Grid item xs={12} md={4}>
@@ -262,4 +263,4 @@ const AddMembers = () => {
   );
 };
 
-export default AddMembers;
+export default createemployee;

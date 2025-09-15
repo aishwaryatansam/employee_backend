@@ -14,24 +14,88 @@ import TLAddProject from "./TLAddProject";
 import EmployeeDetail from "layouts/dashboard/employee/EmployeeDetails";
 import { useEffect } from "react";
 import { useParams } from "react-router-dom";
-
+import EmployeeStatus from "layouts/dashboard/tl/page/EmployeeDetail.jsx";
 const Timesheet = () => {
   const { id } = useParams(); // ✅ This gives you the `id` from URL like /timesheet/:id
   const today = new Date().getDate();
   const [selectedDate, setSelectedDate] = useState(today);
-
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth()); // 0 = Jan
-  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const selectedMonth = new Date().getMonth() + 1; // 0 = Jan
+  const selectedYear = new Date().getFullYear();
   const getDaysInMonth = (month, year) => new Date(year, month + 1, 0).getDate();
   const [employeeData, setEmployeeData] = useState([]);
-  const [hourlyData, setHourlyData] = useState({});
-
+  const [hourDetails, setHourDetails] = useState([]);
+  /*
   useEffect(() => {
     const allData = JSON.parse(localStorage.getItem("timesheet_entries") || "[]");
     console.log("All timesheet entries:", allData);
   }, []);
+*/ useEffect(() => {
+    const email = localStorage.getItem("userEmail"); // Logged-in TL's email
+    if (!email) return;
+
+    // Step 1: Get TL info
+    fetch(`http://localhost:3001/api/members/byEmail?email=${email}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) {
+          const tlData = data.data;
+          console.log("Logged-in TL:", tlData);
+
+          // Step 2: Fetch all members
+          fetch("http://localhost:3001/api/members")
+            .then((res) => res.json())
+            .then((allMembers) => {
+              if (Array.isArray(allMembers)) {
+                const mapped = allMembers
+                  .filter(
+                    (user) =>
+                      user.role?.toLowerCase() === "employee" &&
+                      user.department === tlData.department // ✅ filter by TL's department
+                  )
+                  .map((user) => ({
+                    id: user.id,
+                    name: user.fullName,
+                    role: "Employee",
+                    type: user.department || "-",
+                  }));
+
+                setEmployees(mapped);
+                console.log("Employees in TL's department:", mapped);
+              }
+            });
+        }
+      })
+      .catch((err) => console.error("Error fetching TL or members:", err));
+  }, []);
+
+  // Fetch members once
+
+  useEffect(() => {
+    if (id) {
+      const url = `http://localhost:3001/getHourDetailsByMonth?year=${selectedYear}&month=${selectedMonth}&memberId=${id}`;
+      console.log("Fetching hour details from:", url);
+
+      fetch(url)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success) {
+            setHourDetails(data.data);
+          }
+        })
+        .catch((err) => console.error("Error fetching hour details:", err));
+    }
+  }, [id, selectedYear, selectedMonth]);
+
+  // helper
+  function calculateHours(checkIn, checkOut) {
+    if (!checkIn || !checkOut || checkIn === "00:00:00" || checkOut === "00:00:00") return 0;
+    const [inH, inM] = checkIn.split(":").map(Number);
+    const [outH, outM] = checkOut.split(":").map(Number);
+    const diff = outH * 60 + outM - (inH * 60 + inM);
+    return diff > 0 ? Math.round(diff / 60) : 0;
+  }
 
   const [activeTab, setActiveTab] = useState("timesheet");
 
@@ -57,7 +121,7 @@ const Timesheet = () => {
       emp.type,
       data.regular || "-",
       data.overtime ? `${data.overtime} Hours` : "-",
-      data.sick ? `${data.sick} Hours` : "-",
+      //data.sick ? `${data.sick} Hours` : "-",
       data.total ? `${data.total} Hours` : "-",
     ];
   });
@@ -68,9 +132,11 @@ const Timesheet = () => {
 
     const timesheetMap = {};
     for (const entry of timesheetData) {
-      const { employeeId, date, regular, overtime, sick, total } = entry;
+      /*const { employeeId, date, regular, overtime, sick, total } = entry;*/
+      const { employeeId, date, regular, overtime, total } = entry;
       if (!timesheetMap[employeeId]) timesheetMap[employeeId] = {};
-      timesheetMap[employeeId][date.toString()] = { regular, overtime, sick, total };
+      /*  timesheetMap[employeeId][date.toString()] = { regular, overtime, sick, total };*/
+      timesheetMap[employeeId][date.toString()] = { regular, overtime, total };
     }
 
     const enriched = storedEmployees.map((member) => {
@@ -112,21 +178,19 @@ const Timesheet = () => {
 */
   }
 
-  const handleRowClick = (index) => {
-    navigate(`/employee/${index}`);
+  const handleRowClick = (emp) => {
+    console.log("Clicked Employee Object:", emp); // Log the entire employee object
+    console.log("Clicked Employee ID:", emp.id); // Log emp.id to check if it's available
+    navigate(`/employee/${emp.id}`); // Navigate to the employee details page
   };
+
   const leaveDays = [5, 18, 27]; // e.g. 5th, 18th, 27th of selected month
   // Dummy leave days for demo (could be pulled from DB later)
-  const header = ["Name", "Role", "Type", "Regular", "Overtime", "Sick Leave", "Total Hours"];
+  const header = ["Name", "Role", "Type", "Regular", "Overtime", "Total Hours"];
+  /*  const header = ["Name", "Role", "Type", "Regular", "Overtime", "Sick Leave", "Total Hours"];*/
 
-  const handleCreateReport = () => {
-    if (!selectedDate) {
-      toast.warning("Please select a date to generate a report.");
-      return;
-    }
-
-    {
-      /*const rows = employees.map((emp) => {
+  {
+    /*const rows = employees.map((emp) => {
   const data = emp.timesheet?.[selectedDate] || {};
   return [
     emp.name,
@@ -139,9 +203,26 @@ const Timesheet = () => {
   ];
 });
 */
+  }
+  const handleCreateReport = () => {
+    if (!selectedDate) {
+      toast.warning("Please select a date to generate a report.");
+      return;
     }
 
-    const csvContent = [header, ...rows].map((row) => row.join(",")).join("\n");
+    const csvContent = employees
+      .map((emp) => {
+        const data = emp.timesheet?.[selectedDate.toString()] || {};
+        return [
+          emp.name,
+          emp.role,
+          emp.type,
+          data.regular || "-",
+          data.overtime ? `${data.overtime} Hours` : "-",
+          data.total ? `${data.total} Hours` : "-",
+        ].join(",");
+      })
+      .join("\n");
 
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
@@ -197,6 +278,12 @@ const Timesheet = () => {
               onClick={() => setActiveTab("addProject")}
             >
               Add Project
+            </button>
+            <button
+              className={`tab ${activeTab === "projectStaus" ? "active" : ""}`}
+              onClick={() => setActiveTab("projectStaus")}
+            >
+              Project Status
             </button>
           </div>
           {activeTab === "timesheet" && (
@@ -327,7 +414,9 @@ const Timesheet = () => {
                     <th>Type</th>
                     <th>Regular</th>
                     <th>Overtime</th>
-                    <th>Sick Leave</th>
+                    {/* Sick Leave
+                     <th>Sick Leave</th>
+                    */}
 
                     <th>Total Hour</th>
                   </tr>
@@ -342,7 +431,11 @@ const Timesheet = () => {
                     .map((emp, i) => {
                       const dayData = emp.timesheet?.[selectedDate];
                       return (
-                        <tr key={i} onClick={() => handleRowClick(i)} className="clickable-row">
+                        <tr
+                          key={emp.id}
+                          onClick={() => handleRowClick(emp)}
+                          style={{ cursor: "pointer" }}
+                        >
                           <td>
                             <p className="name">{emp.name}</p>
                             <p className="role">{emp.role}</p>
@@ -350,7 +443,9 @@ const Timesheet = () => {
                           <td>{emp.type}</td>
                           <td>{dayData ? `${dayData.regular} Hours` : "-"}</td>
                           <td>{dayData ? `${dayData.overtime} Hours` : "-"}</td>
-                          <td>{dayData ? `${dayData.sick} Hours` : "-"}</td>
+
+                          {/* <td>{dayData ? `${dayData.sick} Hours` : "-"}</td> */}
+
                           <td>{dayData ? `${dayData.total} Hours` : "-"}</td>
                         </tr>
                       );
@@ -363,6 +458,7 @@ const Timesheet = () => {
 
           {activeTab === "addMembers" && <TLAddMembers />}
           {activeTab === "addProject" && <TLAddProject />}
+          {activeTab === "projectStaus" && <EmployeeStatus />}
         </div>
         <ToastContainer />
       </div>

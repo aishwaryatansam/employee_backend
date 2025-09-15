@@ -1,6 +1,9 @@
+import bcrypt from "bcryptjs";
+
 // controllers/memberController.js
 
-// ➕ Add new member
+//
+/* ➕ Add new member
 export const addMember = (db) => (req, res) => {
   const { fullName, email, phone, empId, department, role, password } = req.body;
 
@@ -16,8 +19,72 @@ export const addMember = (db) => (req, res) => {
     }
     res.json({ success: true, memberId: result.insertId });
   });
+};*/
+export const addMember = (db) => async (req, res) => {
+  const { fullName, email, role, phone, department, password } = req.body;
+
+  try {
+    if (!password) return res.status(400).json({ error: "Password is required" });
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Step 1: Insert without empId
+    const sqlInsert = `
+      INSERT INTO members (fullName, email, phone, department, role, password)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `;
+    const values = [fullName, email, phone, department, role, hashedPassword];
+
+    db.query(sqlInsert, values, (err, result) => {
+      if (err) return res.status(500).json({ error: err.message });
+
+      // Step 2: Generate empId using auto-increment id
+      const empId = `TANSAMEMP${result.insertId.toString().padStart(3, "0")}`;
+
+      // Step 3: Update record with generated empId
+      db.query(
+        "UPDATE members SET empId = ? WHERE id = ?",
+        [empId, result.insertId],
+        (err2) => {
+          if (err2) return res.status(500).json({ error: err2.message });
+
+          res.status(201).json({
+            message: "Member added successfully",
+            empId, // return auto-generated empId to frontend
+          });
+        }
+      );
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+// controllers/memberController.js
+export const getMembersByEmail = (db) => (req, res) => {
+  const { email } = req.query; // ✅ extract email from query
+  if (!email) {
+    return res.status(400).json({ success: false, error: "Email is required" });
+  }
+
+  const sql = "SELECT * FROM members WHERE email = ?";
+  db.query(sql, [email], (err, results) => {
+    if (err) return res.status(500).json({ success: false, error: err.message });
+    if (results.length === 0)
+      return res.status(404).json({ success: false, error: "User not found" });
+    res.json({ success: true, data: results[0] });
+  });
 };
 
+export const getMembersById = (db) => (req, res) => {
+  const { id } = req.params;
+
+  const sql = "SELECT * FROM members WHERE id = ?";
+  db.query(sql, [id], (err, results) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!results.length) return res.status(404).json({ error: "Member not found" });
+    res.json(results[0]);
+  });
+};
 // 📋 Get all members
 export const getMembers = (db) => (req, res) => {
   const sql = `SELECT * FROM members`;
@@ -29,6 +96,24 @@ export const getMembers = (db) => (req, res) => {
     }
     console.log("Fetched members:", results);
     res.json(results);
+  });
+};
+export const getMemberById = (db) => (req, res) => {
+  const { id } = req.params;
+  const sql = `SELECT * FROM members WHERE id = ?`;
+
+  db.query(sql, [id], (err, results) => {
+    if (err) {
+      console.error("DB error:", err);
+      res.status(500).json({ error: err.message });
+      return;
+    }
+
+    if (results.length > 0) {
+      res.json(results[0]); // return single object
+    } else {
+      res.status(404).json({ message: "Member not found" });
+    }
   });
 };
 
@@ -64,4 +149,43 @@ export const updateMember = (db) => (req, res) => {
     }
     res.json({ success: true });
   });
+};
+
+export const login = (db) => async (req, res) => {
+  const { email, password } = req.body;
+
+  try {
+    const sql = "SELECT * FROM members WHERE email = ?";
+    db.query(sql, [email], async (err, results) => {
+      if (err) return res.status(500).json({ error: "DB error" });
+      if (results.length === 0) return res.status(401).json({ error: "Invalid credentials" });
+
+      const user = results[0];
+
+      let isMatch = false;
+
+      try {
+        // First try bcrypt
+        isMatch = await bcrypt.compare(password, user.password);
+      } catch (e) {
+        isMatch = false;
+      }
+
+      // If bcrypt fails AND the DB password is raw text, check direct match
+      if (!isMatch && user.password === password) {
+        isMatch = true;
+      }
+
+      if (!isMatch) {
+        return res.status(401).json({ error: "Invalid credentials" });
+      }
+
+      res.json({
+        email: user.email,
+        role: user.role,
+      });
+    });
+  } catch (err) {
+    res.status(500).json({ error: "Server error" });
+  }
 };
