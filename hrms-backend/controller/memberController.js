@@ -21,40 +21,44 @@ export const addMember = (db) => (req, res) => {
   });
 };*/
 export const addMember = (db) => async (req, res) => {
-  const { fullName, email, role, phone, empId, department, password } = req.body;
+  const { fullName, email, role, phone, department, password } = req.body;
 
   try {
-    console.log("Incoming body:", req.body); // 🔍 debug
+    if (!password) return res.status(400).json({ error: "Password is required" });
 
-    if (!password) {
-      return res.status(400).json({ error: "Password is required" });
-    }
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-    const saltRounds = 10;
-    const hashedPassword = await bcrypt.hash(password, saltRounds);
-
-    console.log("Hashed password:", hashedPassword); // 🔍 check in console
-
-    const sql = `
-      INSERT INTO members (fullName, email, phone, empId, department, role, password)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
+    // Step 1: Insert without empId
+    const sqlInsert = `
+      INSERT INTO members (fullName, email, phone, department, role, password)
+      VALUES (?, ?, ?, ?, ?, ?)
     `;
+    const values = [fullName, email, phone, department, role, hashedPassword];
 
-    const values = [fullName, email, phone, empId, department, role, hashedPassword];
+    db.query(sqlInsert, values, (err, result) => {
+      if (err) return res.status(500).json({ error: err.message });
 
-    db.query(sql, values, (err, result) => {
-      if (err) {
-        console.error("Error inserting member:", err);
-        return res.status(500).json({ error: err.message || "Database error" });
-      }
-      res.status(201).json({ message: "Member added successfully" });
+      // Step 2: Generate empId using auto-increment id
+      const empId = `TANSAMEMP${result.insertId.toString().padStart(3, "0")}`;
+
+      // Step 3: Update record with generated empId
+      db.query(
+        "UPDATE members SET empId = ? WHERE id = ?",
+        [empId, result.insertId],
+        (err2) => {
+          if (err2) return res.status(500).json({ error: err2.message });
+
+          res.status(201).json({
+            message: "Member added successfully",
+            empId, // return auto-generated empId to frontend
+          });
+        }
+      );
     });
   } catch (error) {
-    console.error("Error hashing password:", error);
-    res.status(500).json({ error: error.message || "Server error" });
+    res.status(500).json({ error: error.message });
   }
 };
-
 // controllers/memberController.js
 export const getMembersByEmail = (db) => (req, res) => {
   const { email } = req.query; // ✅ extract email from query
