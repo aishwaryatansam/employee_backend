@@ -32,33 +32,47 @@ function Basic() {
       .catch((err) => console.error("Failed to fetch members:", err));
   }, []);
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
+const handleLogin = async (e) => {
+  e.preventDefault();
 
-    // ✅ Find user by email & password
-    const user = members.find((u) => u.email === email && u.password.trim() === password.trim());
+  try {
+    const res = await fetch("http://localhost:3001/login", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ email, password }),
+    });
 
-    if (user) {
-      // ✅ Store login info
-      localStorage.setItem("userEmail", user.email);
-      localStorage.setItem("userRole", user.role);
-
-      // ✅ Redirect based on role
-      if (user.role === "admin") {
-        navigate("/dashboard/admin");
-      } else if (user.role === "employee") {
-        navigate("/dashboard");
-      } else if (user.role === "tl") {
-        navigate("/tldashboard");
-      } else if (user.role === "hr") {
-        navigate("/hr/dashboard");
-      } else if (user.role === "ceo") {
-        navigate("/ceo-dashboard");
-      }
-    } else {
-      alert("Invalid Email or Password");
+    if (!res.ok) {
+      const errorData = await res.json();
+      alert(errorData.error || "Login failed");
+      return;
     }
-  };
+
+    const data = await res.json();
+
+    // ✅ Store login info
+    localStorage.setItem("userEmail", data.email);
+    localStorage.setItem("userRole", data.role);
+
+    // ✅ Redirect based on role
+    if (data.role === "admin") {
+      navigate("/dashboard/admin");
+    } else if (data.role === "employee") {
+      navigate("/dashboard");
+    } else if (data.role === "tl") {
+      navigate("/tldashboard");
+    } else if (data.role === "hr") {
+      navigate("/hr/dashboard");
+    } else if (data.role === "ceo") {
+      navigate("/ceo-dashboard");
+    }
+  } catch (err) {
+    alert("Login request failed: " + err.message);
+  }
+};
+
 
   return (
     <BasicLayout image={bgImage}>

@@ -155,16 +155,6 @@ const createemployee = () => {
                   />
                 </Grid>
 
-                <Grid item xs={12} md={4}>
-                  <TextField
-                    fullWidth
-                    label="Employee ID"
-                    name="empId"
-                    value={formData.empId}
-                    onChange={handleChange}
-                    required
-                  />
-                </Grid>
 
                 <Grid item xs={12} md={4}>
                   <TextField
