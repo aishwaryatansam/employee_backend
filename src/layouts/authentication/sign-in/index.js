@@ -32,7 +32,7 @@ function Basic() {
       .catch((err) => console.error("Failed to fetch members:", err));
   }, []);
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
 
     // ✅ Find user by email & password
