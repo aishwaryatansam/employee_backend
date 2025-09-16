@@ -7,7 +7,17 @@ import DepartmentHoursChart from "../comp/charts/DepartmentHoursChart";
 import ProjectAllocationChart from "../comp/charts/ProjectAllocationChart";
 import OvertimeTrendChart from "../comp/charts/OvertimeTrendChart";
 import EmployeeTimeline from "../comp/charts/EmployeeTimeline";
+  const weeklyData = {};
+  data.forEach((entry) => {
+    const week = `Week ${dayjs(entry.date).week()}`;
+    const overtime = Number(entry.overtime || 0);
+    weeklyData[week] = (weeklyData[week] || 0) + overtime;
+  });
 
+  const chartData = Object.keys(weeklyData).map((week) => ({
+    week,
+    overtime: weeklyData[week],
+  }));
 const Analytics = () => {
   return (
     <div className="analytics-container">
