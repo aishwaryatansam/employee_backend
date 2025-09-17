@@ -69,7 +69,20 @@ const EmployeeDetails = () => {
     }
   };
 
+useEffect(() => {
+  fetch("http://localhost:3001/getHourDetailsByMonthForCeo")
+    .then((res) => res.json())
+    .then((data) => {
+      if (data.success && data.data) {
+        setTimecardData(data.data);
+      }
+    })
+    .catch((err) => console.error("Fetch error (CEO):", err));
+}, []);
+ // empty deps = fetch once on mount
+
   // Fetch backend data (optional, for future use)
+
   useEffect(() => {
     if (!employee?.id) return;
 

@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useEffect, useState } from "react"; 
+import PropTypes from "prop-types";
 import {
   LineChart,
   Line,
@@ -10,27 +11,62 @@ import {
 } from "recharts";
 import "../../Analytics/analytics.css";
 
-// Sample weekly overtime data
-const data = [
-  { week: "Week 1", hours: 15 },
-  { week: "Week 2", hours: 25 },
-  { week: "Week 3", hours: 20 },
-  { week: "Week 4", hours: 30 },
-  { week: "Week 5", hours: 18 },
-];
-
 const OvertimeTrendChart = ({ month, department }) => {
-  // In future, filter `data` based on month and department
+  const [chartData, setChartData] = useState([]);
+
+useEffect(() => {
+  fetch("http://localhost:3001/getHourDetailsByMonthForCeo")
+    .then((res) => res.json())
+    .then((data) => {
+      if (data.success && data.data) {
+        // Group by week
+        const weekMap = {};
+
+        data.data.forEach((item) => {
+          const date = new Date(item.date);
+          const weekNumber = Math.ceil(date.getDate() / 7); // simple week calculation
+          const weekLabel = `Week ${weekNumber}`;
+
+          const overtime = parseFloat(item.overtime) || 0;
+
+          if (weekMap[weekLabel]) {
+            weekMap[weekLabel] += overtime;
+          } else {
+            weekMap[weekLabel] = overtime;
+          }
+        });
+
+        // Format for chart
+        const formatted = Object.keys(weekMap).map((week) => ({
+          week,
+          hours: weekMap[week],
+        }));
+
+        setChartData(formatted);
+      }
+    })
+    .catch((err) => console.error("Fetch error (CEO):", err));
+}, [month]);
+
 
   return (
     <div className="chart-container">
       <div className="chart-container fade-slide-in">
         <h4 className="chart-title">Overtime Trend</h4>
         <ResponsiveContainer width="100%" height={300}>
-          <LineChart data={data}>
+          <LineChart data={chartData}>
             <CartesianGrid strokeDasharray="3 3" vertical={false} />
-            <XAxis dataKey="week" stroke="#555" />
-            <YAxis stroke="#555" />
+            <XAxis 
+              dataKey="week" 
+              stroke="#555" 
+              interval={0} 
+              tick={{ fontSize: 12 }} 
+            />
+            <YAxis 
+              stroke="#555" 
+              allowDecimals={false} 
+              domain={['auto', 'auto']} // dynamically adjusts based on overtime
+            />
             <Tooltip />
             <Line
               type="monotone"
@@ -47,5 +83,6 @@ const OvertimeTrendChart = ({ month, department }) => {
     </div>
   );
 };
+
 
 export default OvertimeTrendChart;

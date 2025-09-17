@@ -15,6 +15,7 @@ import {
   addHourDetail,
   getHourDetailsByMonth,
   insertApprovalStatus,
+  getHourDetailsByMonthForCeo,
 } from "./controller/timesheetContoller.js";
 import { addProjects, getProjects, updateProject, deleteProject} from "./controller/projectController.js";
 import { requestPasswordReset, resetPassword } from "./controller/memberController.js";
@@ -52,7 +53,7 @@ app.post("/login", login(db));
 app.get("/getProjects", getProjects(db));
 app.put("/updateProject/:id", updateProject(db));
 app.delete("/deleteProject/:project_id", deleteProject(db));
-
+app.get("/getHourDetailsByMonthForCeo", getHourDetailsByMonthForCeo(db));
 app.post("/forgot-password", requestPasswordReset(db));
 app.post("/reset-password", resetPassword(db));
 
