@@ -141,8 +141,8 @@ export default function App() {
       <TlSidebar />
     ) : userRole === "hr" ? (
       <HrSidebar />
-    ) : userRole === "employee" ? (
-      <HrSidebar />
+    ) : userRole === "ceo" ? (
+      <CEOSidebar />
     ) : null;
 
   const themeSelection = darkMode

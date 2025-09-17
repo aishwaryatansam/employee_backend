@@ -11,7 +11,6 @@ import { useTheme } from "@mui/material/styles";
 
 import MDBox from "components/MDBox";
 import MDTypography from "components/MDTypography";
-
 import DashboardNavbar from "examples/Navbars/DashboardNavbar";
 import Footer from "examples/Footer";
 import AdminSidebar from "layouts/dashboard/admin/adminsidebar";
@@ -22,8 +21,8 @@ function MembersTable() {
 
   const [members, setMembers] = useState([]);
   const [editingMember, setEditingMember] = useState(null);
+  const [newImageBase64, setNewImageBase64] = useState(null);
 
-  // ✅ Fetch members on load
   useEffect(() => {
     fetch("http://localhost:3001/api/members")
       .then((res) => res.json())
@@ -31,7 +30,6 @@ function MembersTable() {
       .catch((err) => console.error("Failed to fetch members:", err));
   }, []);
 
-  // ✅ Delete member
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this member?")) return;
 
@@ -50,23 +48,35 @@ function MembersTable() {
     }
   };
 
-  // ✅ Update member
   const handleEditChange = (e) => {
     const { name, value } = e.target;
     setEditingMember((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleEditSubmit = async () => {
+    const payload = {
+      ...editingMember,
+      imagePath: newImageBase64 || editingMember.imagePath,
+    };
+
     try {
-      const res = await fetch(`http://localhost:3001/api/members/${editingMember.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(editingMember),
-      });
+      const res = await fetch(
+        `http://localhost:3001/api/members/${editingMember.id}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        }
+      );
 
       if (res.ok) {
-        setMembers((prev) => prev.map((m) => (m.id === editingMember.id ? editingMember : m)));
+        setMembers((prev) =>
+          prev.map((m) =>
+            m.id === editingMember.id ? { ...payload, id: m.id } : m
+          )
+        );
         setEditingMember(null);
+        setNewImageBase64(null);
       } else {
         console.error("Failed to update member");
       }
@@ -103,6 +113,7 @@ function MembersTable() {
                     Employee Table
                   </MDTypography>
                 </MDBox>
+
                 <MDBox pt={3} px={2}>
                   <table
                     style={{
@@ -113,37 +124,71 @@ function MembersTable() {
                     }}
                   >
                     <thead>
-                      <tr style={{ backgroundColor: isDark ? "#33334d" : "#f0f0f0" }}>
-                        {["Employee ID", "Name", "Email", "Phone", "Role", "Actions"].map(
-                          (head) => (
-                            <th
-                              key={head}
-                              style={{
-                                padding: "12px",
-                                fontWeight: "600",
-                                fontSize: "1rem",
-                                textAlign: "center",
-                              }}
-                            >
-                              {head}
-                            </th>
-                          )
-                        )}
+                      <tr
+                        style={{ backgroundColor: isDark ? "#33334d" : "#f0f0f0" }}
+                      >
+                        {[
+                          "Employee ID",
+                          "Name",
+                          "Email",
+                          "Phone",
+                          "Role",
+                          "Image",
+                          "Actions",
+                        ].map((head) => (
+                          <th
+                            key={head}
+                            style={{
+                              padding: "12px",
+                              fontWeight: "600",
+                              fontSize: "1rem",
+                              textAlign: "center",
+                            }}
+                          >
+                            {head}
+                          </th>
+                        ))}
                       </tr>
                     </thead>
                     <tbody>
                       {members.map((member) => (
-                        <tr key={member.id} style={{ fontSize: "0.9rem", textAlign: "center" }}>
+                        <tr
+                          key={member.id}
+                          style={{ fontSize: "0.9rem", textAlign: "center" }}
+                        >
                           <td style={{ padding: "10px" }}>{member.empId}</td>
                           <td style={{ padding: "10px" }}>{member.fullName}</td>
                           <td style={{ padding: "10px" }}>{member.email}</td>
                           <td style={{ padding: "10px" }}>{member.phone}</td>
                           <td style={{ padding: "10px" }}>{member.role}</td>
                           <td style={{ padding: "10px" }}>
-                            <IconButton color="primary" onClick={() => setEditingMember(member)}>
+                            {member.imagePath ? (
+                              <img
+                                src={`http://localhost:3001${member.imagePath}`}
+                                alt="Profile"
+                                style={{
+                                  width: "50px",
+                                  height: "50px",
+                                  borderRadius: "50%",
+                                  objectFit: "cover",
+                                  border: "1px solid #ccc",
+                                }}
+                              />
+                            ) : (
+                              "No Image"
+                            )}
+                          </td>
+                          <td style={{ padding: "10px" }}>
+                            <IconButton
+                              color="primary"
+                              onClick={() => setEditingMember(member)}
+                            >
                               <EditIcon fontSize="small" />
                             </IconButton>
-                            <IconButton color="error" onClick={() => handleDelete(member.id)}>
+                            <IconButton
+                              color="error"
+                              onClick={() => handleDelete(member.id)}
+                            >
                               <DeleteIcon fontSize="small" />
                             </IconButton>
                           </td>
@@ -159,7 +204,7 @@ function MembersTable() {
         <Footer />
       </MDBox>
 
-      {/* Edit Modal */}
+      {/* ✅ Edit Modal */}
       <Modal open={!!editingMember} onClose={() => setEditingMember(null)}>
         <Box
           sx={{
@@ -220,11 +265,74 @@ function MembersTable() {
                 value={editingMember.role}
                 onChange={handleEditChange}
               />
-              <Box mt={2} display="flex" justifyContent="flex-end" gap={2}>
+              <TextField
+                fullWidth
+                margin="normal"
+                label="Department"
+                name="department"
+                value={editingMember.department || ""}
+                onChange={handleEditChange}
+              />
+
+              <TextField
+                fullWidth
+                margin="normal"
+                type="file"
+                inputProps={{ accept: "image/*" }}
+                onChange={(e) => {
+                  const file = e.target.files[0];
+                  if (file) {
+                    const reader = new FileReader();
+                    reader.onloadend = () => {
+                      const base64 = reader.result.split(",")[1];
+                      setNewImageBase64(base64);
+                    };
+                    reader.readAsDataURL(file);
+                  }
+                }}
+              />
+
+              {newImageBase64 ? (
+                <Box mt={2} textAlign="center">
+                  <img
+                    src={`data:image/jpeg;base64,${newImageBase64}`}
+                    alt="New Preview"
+                    style={{
+                      width: "80px",
+                      height: "80px",
+                      borderRadius: "8px",
+                      objectFit: "cover",
+                      border: "1px solid #ccc",
+                    }}
+                  />
+                </Box>
+              ) : editingMember.imagePath ? (
+                <Box mt={2} textAlign="center">
+                  <img
+                    src={`http://localhost:3001${editingMember.imagePath}`}
+                    alt="Current Profile"
+                    style={{
+                      width: "80px",
+                      height: "80px",
+                      borderRadius: "8px",
+                      objectFit: "cover",
+                      border: "1px solid #ccc",
+                    }}
+                  />
+                </Box>
+              ) : null}
+
+              <Box mt={3} display="flex" justifyContent="flex-end" gap={2}>
                 <button onClick={handleEditSubmit} className="btn btn-primary">
                   Save
                 </button>
-                <button onClick={() => setEditingMember(null)} className="btn btn-secondary">
+                <button
+                  onClick={() => {
+                    setEditingMember(null);
+                    setNewImageBase64(null);
+                  }}
+                  className="btn btn-secondary"
+                >
                   Cancel
                 </button>
               </Box>
