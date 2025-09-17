@@ -11,12 +11,11 @@ import MDButton from "components/MDButton";
 
 // Authentication layout components
 import BasicLayout from "layouts/authentication/components/BasicLayout";
-
+import { useNavigate } from "react-router-dom";
 // Images
 import bgImage from "assets/images/background.png";
 import logo from "assets/images/logos/tansamlogo.png";
 
-import { useNavigate } from "react-router-dom";
 
 function Basic() {
   const [email, setEmail] = useState("");
@@ -128,6 +127,14 @@ const handleLogin = async (e) => {
                 Login
               </MDButton>
             </MDBox>
+ <MDTypography
+  variant="button"
+  color="info"
+  onClick={() => navigate("/authentication/forgot-password")}
+  style={{ cursor: "pointer", marginTop: "10px", display: "block" }}
+>
+  Forgot Password?
+</MDTypography>
           </form>
         </MDBox>
       </Card>

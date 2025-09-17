@@ -17,7 +17,7 @@ import {
   insertApprovalStatus,
 } from "./controller/timesheetContoller.js";
 import { addProjects, getProjects, updateProject, deleteProject} from "./controller/projectController.js";
-
+import { requestPasswordReset, resetPassword } from "./controller/memberController.js";
 const app = express();
 app.use(express.json());
 app.use(cors());
@@ -53,6 +53,8 @@ app.get("/getProjects", getProjects(db));
 app.put("/updateProject/:id", updateProject(db));
 app.delete("/deleteProject/:project_id", deleteProject(db));
 
+app.post("/forgot-password", requestPasswordReset(db));
+app.post("/reset-password", resetPassword(db));
 
 const PORT = 3001;
 app.listen(PORT, () => {
