@@ -6,6 +6,7 @@ import { fileURLToPath } from "url";
 
 // Controllers
 import {
+  getEmployeeCount,
   addMember,
   getMembers,
   deleteMember,
@@ -16,6 +17,7 @@ import {
 } from "./controller/memberController.js";
 
 import { createHrProjects, assignTeamLead } from "./controller/hrController.js";
+
 
 import {
   addHourDetail,
@@ -76,6 +78,8 @@ app.delete("/api/members/:id", deleteMember(db));
 app.put("/api/members/:id", updateMember(db));
 app.get("/api/members/byEmail", getMembersByEmail(db));
 app.post("/login", login(db));
+app.get("/api/hr/employee-count", getEmployeeCount(db));
+
 
 // Projects
 app.post("/api/projects", createHrProjects(db));

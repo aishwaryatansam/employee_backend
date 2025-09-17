@@ -1,6 +1,18 @@
 import React, { useState, useEffect } from "react";
-import { Card, CardContent, Grid, Typography, Switch, Box } from "@mui/material";
-import { Group, Assignment, EmojiEvents, BusinessCenter } from "@mui/icons-material";
+import {
+  Card,
+  CardContent,
+  Grid,
+  Typography,
+  Switch,
+  Box,
+} from "@mui/material";
+import {
+  Group,
+  Assignment,
+  EmojiEvents,
+  BusinessCenter,
+} from "@mui/icons-material";
 import PropTypes from "prop-types";
 import HrSidebar from "layouts/dashboard/hr/sidebar/HrSidebar";
 import HrNavbar from "layouts/dashboard/hr/navbar/HrNavbar";
@@ -32,42 +44,72 @@ Counter.propTypes = {
   duration: PropTypes.number,
 };
 
-const cardData = [
-  {
-    title: "Total Employees",
-    value: 128,
-    icon: <Group fontSize="medium" />,
-    className: "card-info",
-  },
-  {
-    title: "Ongoing Projects",
-    value: 15,
-    icon: <Assignment fontSize="medium" />,
-    className: "card-success",
-  },
-  {
-    title: "Completed Tasks",
-    value: 284,
-    icon: <EmojiEvents fontSize="medium" />,
-    className: "card-warning",
-  },
-  {
-    title: "Active Clients",
-    value: 12,
-    icon: <BusinessCenter fontSize="medium" />,
-    className: "card-danger",
-  },
-];
-
 const HrDashboard = () => {
   const [darkMode, setDarkMode] = useState(false);
+  const [employeeCount, setEmployeeCount] = useState(null);
+  const [ongoingProjects, setOngoingProjects] = useState(null);
+  const [completedProjects, setCompletedProjects] = useState(null);
+  const [activeClients, setActiveClients] = useState(null);
+
+  useEffect(() => {
+    // Fetch employee count
+    fetch("http://localhost:3001/api/hr/employee-count")
+      .then((res) => res.json())
+      .then((data) => setEmployeeCount(data.totalEmployees))
+      .catch((err) => console.error("Employee count error:", err));
+
+    // Fetch project data and derive metrics
+    fetch("http://localhost:3001/getProjects")
+      .then((res) => res.json())
+      .then((projects) => {
+        // Count ongoing and completed projects
+        setOngoingProjects(projects.filter((p) => p.status === "Ongoing").length);
+        setCompletedProjects(projects.filter((p) => p.status === "Completed").length);
+
+        // Count unique clients from hr_project table
+        const uniqueClients = new Set();
+        projects.forEach((project) => {
+          const clientName = project.client?.trim().toLowerCase();
+          if (clientName) {
+            uniqueClients.add(clientName);
+          }
+        });
+        setActiveClients(uniqueClients.size);
+      })
+      .catch((err) => console.error("Project fetch error:", err));
+  }, []);
+
+  const cardData = [
+    {
+      title: "Total Employees",
+      value: employeeCount ?? 0,
+      icon: <Group fontSize="medium" />,
+      className: "card-info",
+    },
+    {
+      title: "Ongoing Projects",
+      value: ongoingProjects ?? 0,
+      icon: <Assignment fontSize="medium" />,
+      className: "card-success",
+    },
+    {
+      title: "Completed Projects",
+      value: completedProjects ?? 0,
+      icon: <EmojiEvents fontSize="medium" />,
+      className: "card-warning",
+    },
+    {
+      title: "Active Clients",
+      value: activeClients ?? 0,
+      icon: <BusinessCenter fontSize="medium" />,
+      className: "card-danger",
+    },
+  ];
 
   return (
     <>
       <HrSidebar />
       <Box sx={{ ml: "260px" }}>
-        {" "}
-        {/* Adjust sidebar width */}
         <HrNavbar />
         <Box
           className={`hr-dashboard-container ${darkMode ? "dark-mode" : "light-mode"}`}
@@ -79,9 +121,7 @@ const HrDashboard = () => {
               <p className="hr-subtitle">Projects and Assignments Overview</p>
             </header>
             <div className="theme-switch">
-              <Typography variant="body2" className="switch-label">
-                Dark Mode
-              </Typography>
+              <Typography variant="body2" className="switch-label">Dark Mode</Typography>
               <Switch checked={darkMode} onChange={() => setDarkMode(!darkMode)} />
             </div>
           </Box>
@@ -93,46 +133,16 @@ const HrDashboard = () => {
                   <div className="card-icon-container">{item.icon}</div>
                   <CardContent className="card-content">
                     <h5>{item.title}</h5>
-                    <Counter value={item.value} duration={1500} />
+                    {item.value === null ? (
+                      <Typography variant="body2">Loading...</Typography>
+                    ) : (
+                      <Counter value={item.value} duration={1500} />
+                    )}
                   </CardContent>
                 </Card>
               </Grid>
             ))}
           </Grid>
-
-          <div className="table-section">
-            <Typography className="table-title">Recent Team Assignments</Typography>
-            <table className="assignment-table">
-              <thead>
-                <tr>
-                  <th>Project</th>
-                  <th>Team Lead</th>
-                  <th>Team Size</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>Website Revamp</td>
-                  <td>Alice Johnson</td>
-                  <td>6</td>
-                  <td>In Progress</td>
-                </tr>
-                <tr>
-                  <td>Mobile App Development</td>
-                  <td>Bob Smith</td>
-                  <td>4</td>
-                  <td>Completed</td>
-                </tr>
-                <tr>
-                  <td>Internal Tools</td>
-                  <td>Chris Lee</td>
-                  <td>5</td>
-                  <td>Pending</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
         </Box>
       </Box>
     </>

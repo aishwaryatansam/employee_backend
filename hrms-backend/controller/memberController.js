@@ -2,6 +2,18 @@ import bcrypt from "bcryptjs";
 import fs from "fs";
 import path from "path";
 
+
+// 📊 Get total employee count
+export const getEmployeeCount = (db) => (req, res) => {
+  const sql = "SELECT COUNT(*) AS totalEmployees FROM members";
+  db.query(sql, (err, results) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({ totalEmployees: results[0].totalEmployees });
+  });
+};
+
+
+
 // ➕ Add new member
 export const addMember = (db) => async (req, res) => {
   const { fullName, email, role, phone, department, password, imagePath } = req.body;
@@ -93,6 +105,7 @@ export const deleteMember = (db) => (req, res) => {
     res.json({ success: true });
   });
 };
+
 
 // ✏️ Update a member
 export const updateMember = (db) => async (req, res) => {
