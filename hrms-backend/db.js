@@ -23,10 +23,10 @@ import {
   insertApprovalStatus,
   getHourDetailsByMonthForCeo,
 } from "./controller/timesheetContoller.js";
-<<<<<<< HEAD
+
 import { addProjects, getProjects, updateProject, deleteProject} from "./controller/projectController.js";
 import { requestPasswordReset, resetPassword } from "./controller/memberController.js";
-=======
+
 
 import {
   addProjects,
@@ -35,24 +35,19 @@ import {
   deleteProject,
 } from "./controller/projectController.js";
 
-// Setup
->>>>>>> card
-const app = express();
-const PORT = 3001;
 
-// Resolve __dirname for ES modules
+const app = express();
+
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Middleware
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ limit: "10mb", extended: true }));
 app.use(cors());
 
-// ✅ Serve uploaded images
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-// ✅ MySQL connection
 const db = mysql.createConnection({
   host: "localhost",
   user: "root",
@@ -90,16 +85,12 @@ app.post("/addProjects", addProjects(db));
 app.get("/getProjects", getProjects(db));
 app.put("/updateProject/:id", updateProject(db));
 app.delete("/deleteProject/:project_id", deleteProject(db));
-<<<<<<< HEAD
 app.get("/getHourDetailsByMonthForCeo", getHourDetailsByMonthForCeo(db));
 app.post("/forgot-password", requestPasswordReset(db));
 app.post("/reset-password", resetPassword(db));
 
 const PORT = 3001;
-=======
 
-// ------------------- Server ------------------- //
->>>>>>> card
 app.listen(PORT, () => {
   console.log(`🚀 Server running at http://localhost:${PORT}`);
 });
