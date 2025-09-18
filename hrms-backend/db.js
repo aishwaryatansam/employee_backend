@@ -1,6 +1,8 @@
 import express from "express";
 import cors from "cors";
 import mysql from "mysql2";
+import path from "path";
+import { fileURLToPath } from "url";
 import {
   addMember,
   getMembers,

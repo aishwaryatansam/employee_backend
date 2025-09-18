@@ -11,6 +11,7 @@ import { useTheme } from "@mui/material/styles";
 
 import MDBox from "components/MDBox";
 import MDTypography from "components/MDTypography";
+
 import DashboardNavbar from "examples/Navbars/DashboardNavbar";
 import Footer from "examples/Footer";
 import AdminSidebar from "layouts/dashboard/admin/adminsidebar";
@@ -23,6 +24,7 @@ function MembersTable() {
   const [editingMember, setEditingMember] = useState(null);
   const [newImageBase64, setNewImageBase64] = useState(null);
 
+  // ✅ Fetch members on load
   useEffect(() => {
     fetch("http://localhost:3001/api/members")
       .then((res) => res.json())
@@ -30,6 +32,7 @@ function MembersTable() {
       .catch((err) => console.error("Failed to fetch members:", err));
   }, []);
 
+  // ✅ Delete member
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this member?")) return;
 
@@ -48,6 +51,7 @@ function MembersTable() {
     }
   };
 
+  // ✅ Update member
   const handleEditChange = (e) => {
     const { name, value } = e.target;
     setEditingMember((prev) => ({ ...prev, [name]: value }));
@@ -152,10 +156,7 @@ function MembersTable() {
                     </thead>
                     <tbody>
                       {members.map((member) => (
-                        <tr
-                          key={member.id}
-                          style={{ fontSize: "0.9rem", textAlign: "center" }}
-                        >
+                        <tr key={member.id} style={{ fontSize: "0.9rem", textAlign: "center" }}>
                           <td style={{ padding: "10px" }}>{member.empId}</td>
                           <td style={{ padding: "10px" }}>{member.fullName}</td>
                           <td style={{ padding: "10px" }}>{member.email}</td>
@@ -204,7 +205,7 @@ function MembersTable() {
         <Footer />
       </MDBox>
 
-      {/* ✅ Edit Modal */}
+      {/* Edit Modal */}
       <Modal open={!!editingMember} onClose={() => setEditingMember(null)}>
         <Box
           sx={{
