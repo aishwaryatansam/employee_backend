@@ -22,6 +22,7 @@ function MembersTable() {
 
   const [members, setMembers] = useState([]);
   const [editingMember, setEditingMember] = useState(null);
+  const [newImageBase64, setNewImageBase64] = useState(null);
 
   // ✅ Fetch members on load
   useEffect(() => {
@@ -57,16 +58,29 @@ function MembersTable() {
   };
 
   const handleEditSubmit = async () => {
+    const payload = {
+      ...editingMember,
+      imagePath: newImageBase64 || editingMember.imagePath,
+    };
+
     try {
-      const res = await fetch(`http://localhost:3001/api/members/${editingMember.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(editingMember),
-      });
+      const res = await fetch(
+        `http://localhost:3001/api/members/${editingMember.id}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        }
+      );
 
       if (res.ok) {
-        setMembers((prev) => prev.map((m) => (m.id === editingMember.id ? editingMember : m)));
+        setMembers((prev) =>
+          prev.map((m) =>
+            m.id === editingMember.id ? { ...payload, id: m.id } : m
+          )
+        );
         setEditingMember(null);
+        setNewImageBase64(null);
       } else {
         console.error("Failed to update member");
       }
@@ -103,6 +117,7 @@ function MembersTable() {
                     Employee Table
                   </MDTypography>
                 </MDBox>
+
                 <MDBox pt={3} px={2}>
                   <table
                     style={{
@@ -113,22 +128,30 @@ function MembersTable() {
                     }}
                   >
                     <thead>
-                      <tr style={{ backgroundColor: isDark ? "#33334d" : "#f0f0f0" }}>
-                        {["Employee ID", "Name", "Email", "Phone", "Role", "Actions"].map(
-                          (head) => (
-                            <th
-                              key={head}
-                              style={{
-                                padding: "12px",
-                                fontWeight: "600",
-                                fontSize: "1rem",
-                                textAlign: "center",
-                              }}
-                            >
-                              {head}
-                            </th>
-                          )
-                        )}
+                      <tr
+                        style={{ backgroundColor: isDark ? "#33334d" : "#f0f0f0" }}
+                      >
+                        {[
+                          "Employee ID",
+                          "Name",
+                          "Email",
+                          "Phone",
+                          "Role",
+                          "Image",
+                          "Actions",
+                        ].map((head) => (
+                          <th
+                            key={head}
+                            style={{
+                              padding: "12px",
+                              fontWeight: "600",
+                              fontSize: "1rem",
+                              textAlign: "center",
+                            }}
+                          >
+                            {head}
+                          </th>
+                        ))}
                       </tr>
                     </thead>
                     <tbody>
@@ -140,10 +163,33 @@ function MembersTable() {
                           <td style={{ padding: "10px" }}>{member.phone}</td>
                           <td style={{ padding: "10px" }}>{member.role}</td>
                           <td style={{ padding: "10px" }}>
-                            <IconButton color="primary" onClick={() => setEditingMember(member)}>
+                            {member.imagePath ? (
+                              <img
+                                src={`http://localhost:3001${member.imagePath}`}
+                                alt="Profile"
+                                style={{
+                                  width: "50px",
+                                  height: "50px",
+                                  borderRadius: "50%",
+                                  objectFit: "cover",
+                                  border: "1px solid #ccc",
+                                }}
+                              />
+                            ) : (
+                              "No Image"
+                            )}
+                          </td>
+                          <td style={{ padding: "10px" }}>
+                            <IconButton
+                              color="primary"
+                              onClick={() => setEditingMember(member)}
+                            >
                               <EditIcon fontSize="small" />
                             </IconButton>
-                            <IconButton color="error" onClick={() => handleDelete(member.id)}>
+                            <IconButton
+                              color="error"
+                              onClick={() => handleDelete(member.id)}
+                            >
                               <DeleteIcon fontSize="small" />
                             </IconButton>
                           </td>
@@ -220,11 +266,74 @@ function MembersTable() {
                 value={editingMember.role}
                 onChange={handleEditChange}
               />
-              <Box mt={2} display="flex" justifyContent="flex-end" gap={2}>
+              <TextField
+                fullWidth
+                margin="normal"
+                label="Department"
+                name="department"
+                value={editingMember.department || ""}
+                onChange={handleEditChange}
+              />
+
+              <TextField
+                fullWidth
+                margin="normal"
+                type="file"
+                inputProps={{ accept: "image/*" }}
+                onChange={(e) => {
+                  const file = e.target.files[0];
+                  if (file) {
+                    const reader = new FileReader();
+                    reader.onloadend = () => {
+                      const base64 = reader.result.split(",")[1];
+                      setNewImageBase64(base64);
+                    };
+                    reader.readAsDataURL(file);
+                  }
+                }}
+              />
+
+              {newImageBase64 ? (
+                <Box mt={2} textAlign="center">
+                  <img
+                    src={`data:image/jpeg;base64,${newImageBase64}`}
+                    alt="New Preview"
+                    style={{
+                      width: "80px",
+                      height: "80px",
+                      borderRadius: "8px",
+                      objectFit: "cover",
+                      border: "1px solid #ccc",
+                    }}
+                  />
+                </Box>
+              ) : editingMember.imagePath ? (
+                <Box mt={2} textAlign="center">
+                  <img
+                    src={`http://localhost:3001${editingMember.imagePath}`}
+                    alt="Current Profile"
+                    style={{
+                      width: "80px",
+                      height: "80px",
+                      borderRadius: "8px",
+                      objectFit: "cover",
+                      border: "1px solid #ccc",
+                    }}
+                  />
+                </Box>
+              ) : null}
+
+              <Box mt={3} display="flex" justifyContent="flex-end" gap={2}>
                 <button onClick={handleEditSubmit} className="btn btn-primary">
                   Save
                 </button>
-                <button onClick={() => setEditingMember(null)} className="btn btn-secondary">
+                <button
+                  onClick={() => {
+                    setEditingMember(null);
+                    setNewImageBase64(null);
+                  }}
+                  className="btn btn-secondary"
+                >
                   Cancel
                 </button>
               </Box>

@@ -1,6 +1,8 @@
 import express from "express";
 import cors from "cors";
 import mysql from "mysql2";
+import path from "path";
+import { fileURLToPath } from "url";
 import {
   addMember,
   getMembers,
@@ -15,13 +17,23 @@ import {
   addHourDetail,
   getHourDetailsByMonth,
   insertApprovalStatus,
+  getHourDetailsByMonthForCeo,
 } from "./controller/timesheetContoller.js";
 import { addProjects, getProjects, updateProject, deleteProject} from "./controller/projectController.js";
-
+import { requestPasswordReset, resetPassword } from "./controller/memberController.js";
 const app = express();
 app.use(express.json());
-app.use(cors());
 
+
+// Resolve __dirname for ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Middleware
+app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ limit: "10mb", extended: true }));
+app.use(cors());
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 const db = mysql.createConnection({
   host: "localhost",
   user: "root",
@@ -52,7 +64,9 @@ app.post("/login", login(db));
 app.get("/getProjects", getProjects(db));
 app.put("/updateProject/:id", updateProject(db));
 app.delete("/deleteProject/:project_id", deleteProject(db));
-
+app.get("/getHourDetailsByMonthForCeo", getHourDetailsByMonthForCeo(db));
+app.post("/forgot-password", requestPasswordReset(db));
+app.post("/reset-password", resetPassword(db));
 
 const PORT = 3001;
 app.listen(PORT, () => {

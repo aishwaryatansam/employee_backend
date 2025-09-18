@@ -1,5 +1,13 @@
 import React, { useState } from "react";
-import { Card, CardContent, Grid, Typography, TextField, Button, Box } from "@mui/material";
+import {
+  Card,
+  CardContent,
+  Grid,
+  Typography,
+  TextField,
+  Button,
+  Box,
+} from "@mui/material";
 import HrSidebar from "layouts/dashboard/hr/sidebar/HrSidebar";
 import HrNavbar from "layouts/dashboard/hr/navbar/HrNavbar";
 import "./createproject.css";
@@ -8,26 +16,49 @@ const CreateProject = () => {
   const [projectName, setProjectName] = useState("");
   const [deadline, setDeadline] = useState("");
   const [description, setDescription] = useState("");
+  const [client, setClient] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    const trimmedName = projectName.trim();
+    const trimmedClient = client.trim();
+    const trimmedDeadline = deadline.trim();
+
+    if (!trimmedName || !trimmedClient || !trimmedDeadline) {
+      alert("❌ Project Name, Client, and Deadline are required.");
+      return;
+    }
+
+    const payload = {
+      projectName: trimmedName,
+      deadline: trimmedDeadline,
+      description: description.trim(),
+      client: trimmedClient,
+    };
+
+    setLoading(true);
 
     try {
       const res = await fetch("http://localhost:3001/api/projects", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ projectName, deadline, description }),
+        body: JSON.stringify(payload),
       });
 
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to create project");
 
-      alert(`Project Created Successfully! ID: ${data.projectId}`);
+      alert(`✅ Project Created Successfully! ID: ${data.projectId}`);
       setProjectName("");
       setDeadline("");
       setDescription("");
+      setClient("");
     } catch (err) {
       alert("❌ " + err.message);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -56,6 +87,15 @@ const CreateProject = () => {
                     />
                     <TextField
                       fullWidth
+                      label="Client"
+                      variant="outlined"
+                      margin="normal"
+                      value={client}
+                      onChange={(e) => setClient(e.target.value)}
+                      required
+                    />
+                    <TextField
+                      fullWidth
                       label="Deadline"
                       type="date"
                       variant="outlined"
@@ -76,8 +116,13 @@ const CreateProject = () => {
                       onChange={(e) => setDescription(e.target.value)}
                     />
                     <Box display="flex" justifyContent="center" mt={4}>
-                      <Button variant="contained" type="submit" className="submit-btn">
-                        Create Project
+                      <Button
+                        variant="contained"
+                        type="submit"
+                        className="submit-btn"
+                        disabled={loading}
+                      >
+                        {loading ? "Creating..." : "Create Project"}
                       </Button>
                     </Box>
                   </form>

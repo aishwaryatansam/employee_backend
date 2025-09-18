@@ -36,6 +36,8 @@ import { useMaterialUIController, setMiniSidenav, setOpenConfigurator } from "co
 
 // Pages
 import EmployeeDetail from "layouts/dashboard/tl/page/EmployeeDetail";
+import ForgotPassword from "layouts/authentication/ForgotPassword/ForgotPassword";
+import ResetPassword from "layouts/authentication/ForgotPassword/ResetPassword";
 
 export default function App() {
   const [controller, dispatch] = useMaterialUIController();
@@ -157,7 +159,9 @@ export default function App() {
     <CacheProvider value={rtlCache}>
       <ThemeProvider theme={themeSelection}>
         <CssBaseline />
-        {currentLayout === "dashboard" && SidebarComponent}
+       {!pathname.startsWith("/authentication") && pathname !== "/reset-password" && currentLayout === "dashboard" && SidebarComponent}
+
+
         <Configurator />
         {configsButton}
         <Routes>
@@ -166,19 +170,24 @@ export default function App() {
           <Route path="/employee/:id" element={<EmployeeDetail />} />
           <Route path="/" element={<Navigate to="/authentication/sign-in" />} />
           <Route path="*" element={<Navigate to="/authentication/sign-in" />} />
+          <Route path="/authentication/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
         </Routes>
       </ThemeProvider>
     </CacheProvider>
   ) : (
     <ThemeProvider theme={themeSelection}>
       <CssBaseline />
-      {currentLayout === "dashboard" && SidebarComponent}
+    {!pathname.startsWith("/authentication") && pathname !== "/reset-password" && currentLayout === "dashboard" && SidebarComponent}
+
       <Configurator />
       {configsButton}
       <Routes>
         {getRoutes(routes)}
         {userRole === "ceo" && getRoutes(CEORoutes)}
         <Route path="/employee/:id" element={<EmployeeDetail />} />
+        <Route path="/authentication/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/" element={<Navigate to="/authentication/sign-in" />} />
         <Route path="*" element={<Navigate to="/authentication/sign-in" />} />
       </Routes>

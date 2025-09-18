@@ -90,6 +90,18 @@ export const updateEmployeeHours = (db) => (req, res) => {
     }
   );
 };
+export const getHourDetailsByMonthForCeo = (db) => (req, res) => {
+  const query = `
+    SELECT *
+    FROM timesheet
+    ORDER BY date ASC;
+  `;
+
+  db.query(query, (err, results) => {
+    if (err) return res.json({ success: false, error: err.message });
+    res.json({ success: true, data: results });
+  });
+};
 
 // 📂 Get employee hours for a given month
 export const getHourDetailsByMonth = (db) => (req, res) => {

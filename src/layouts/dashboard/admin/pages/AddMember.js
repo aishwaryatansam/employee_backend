@@ -15,7 +15,7 @@ import {
   Snackbar,
   Alert,
 } from "@mui/material";
-import { Visibility, VisibilityOff } from "@mui/icons-material";
+import { Visibility, VisibilityOff, Delete} from "@mui/icons-material";
 
 import DashboardNavbar from "examples/Navbars/DashboardNavbar";
 import AdminSidebar from "layouts/dashboard/admin/adminsidebar";
@@ -29,6 +29,7 @@ const AddMembers = () => {
     empId: "",
     department: "",
     password: "",
+    imagePath: ""
   });
 
   const [showPassword, setShowPassword] = useState(false);
@@ -41,6 +42,27 @@ const AddMembers = () => {
     if (name === "password") setShowExample(value.length > 0);
   };
 
+ const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const allowedTypes = ["image/jpeg", "image/png"];
+    if (!allowedTypes.includes(file.type)) {
+      alert("Only JPEG or PNG images are allowed.");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64 = reader.result.split(",")[1];
+      setFormData((prev) => ({ ...prev, imagePath: base64 }));
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemoveImage = () => {
+    setFormData((prev) => ({ ...prev, imagePath: "" }));
+  };
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -77,6 +99,7 @@ const AddMembers = () => {
         empId: "",
         department: "",
         password: "",
+        imagePath: ""
       });
       setShowExample(false);
     } catch (error) {
@@ -156,13 +179,38 @@ const AddMembers = () => {
                 </Grid>
 
                 <Grid item xs={12} md={4}>
-                  <TextField
-                    fullWidth
-                    label="Department (optional)"
-                    name="department"
-                    value={formData.department}
-                    onChange={handleChange}
-                  />
+                  <FormControl fullWidth required>
+                    <InputLabel id="department-label">Department *</InputLabel>
+                    <Select
+                      labelId="department-label"
+                      name="department"
+                      value={formData.department}
+                      onChange={handleChange}
+                      label="Department *"
+                    >
+                      <MenuItem value="Innovative Manufacturing">
+                        Innovative Manufacturing
+                      </MenuItem>
+                      <MenuItem value="Smart Factory Center">
+                        Smart Factory Center
+                      </MenuItem>
+                      <MenuItem value="AR | VR | MR Research Centre">
+                        AR | VR | MR Research Centre
+                      </MenuItem>
+                      <MenuItem value="Research Centre For PLM">
+                        Research Centre For PLM
+                      </MenuItem>
+                      <MenuItem value="Research Centre For Asset Performance">
+                        Research Centre For Asset Performance
+                      </MenuItem>
+                      <MenuItem value="Product Innovation Center">
+                        Product Innovation Center
+                      </MenuItem>
+                      <MenuItem value="Predictive Engineering">
+                        Predictive Engineering
+                      </MenuItem>
+                    </Select>
+                  </FormControl>
                 </Grid>
 
                 <Grid item xs={12} md={4}>
@@ -210,6 +258,61 @@ const AddMembers = () => {
                     >
                       Try: <strong>Secure@2025!</strong>
                     </Typography>
+                  )}
+                </Grid>
+{/* Image Upload Styled as TextField */}
+                <Grid item xs={12} md={4}>
+                  <Box sx={{ position: "relative", width: "100%" }}>
+                    <TextField
+                      fullWidth
+                      label="Upload Image"
+                      value={formData.imagePath ? "Image selected" : ""}
+                      InputProps={{
+                        readOnly: true,
+                        sx: {
+                          cursor: "pointer",
+                          color: formData.imagePath ? "text.primary" : "grey.500",
+                          backgroundColor: "#f5f5f5",
+                        },
+                      }}
+                      onClick={() => document.getElementById("image-upload-input").click()}
+                    />
+                    <input
+                      id="image-upload-input"
+                      type="file"
+                      accept="image/png, image/jpeg"
+                      style={{ display: "none" }}
+                      onChange={handleImageChange}
+                    />
+                  </Box>
+
+                  {formData.imagePath && (
+                    <Box mt={1} sx={{ position: "relative", display: "inline-block" }}>
+                      <img
+                        src={`data:image/png;base64,${formData.imagePath}`}
+                        alt="Preview"
+                        style={{
+                          width: "100px",
+                          height: "100px",
+                          objectFit: "cover",
+                          borderRadius: "8px",
+                          border: "1px solid #ccc",
+                        }}
+                      />
+                      <IconButton
+                        size="small"
+                        onClick={handleRemoveImage}
+                        sx={{
+                          position: "absolute",
+                          top: -10,
+                          right: -10,
+                          background: "#fff",
+                          boxShadow: 1,
+                        }}
+                      >
+                        <Delete fontSize="small" />
+                      </IconButton>
+                    </Box>
                   )}
                 </Grid>
               </Grid>

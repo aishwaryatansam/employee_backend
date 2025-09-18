@@ -1,47 +1,51 @@
 import bcrypt from "bcryptjs";
+import nodemailer from "nodemailer";
+import fs from "fs";
+import path from "path";
 
-// controllers/memberController.js
-
-//
-/* ➕ Add new member
-export const addMember = (db) => (req, res) => {
-  const { fullName, email, phone, empId, department, role, password } = req.body;
-
-  const sql = `
-    INSERT INTO members (fullName, email, phone, empId, department, role, password)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
-  `;
-
-  db.query(sql, [fullName, email, phone, empId, department, role, password], (err, result) => {
-    if (err) {
-      res.status(500).json({ error: err.message });
-      return;
-    }
-    res.json({ success: true, memberId: result.insertId });
+// 🔑 Token generator
+function generateToken() {
+  return Math.random().toString(36).substr(2) + Date.now().toString(36);
+}
+export const getEmployeeCount = (db) => (req, res) => {
+  const sql = "SELECT COUNT(*) AS totalEmployees FROM members";
+  db.query(sql, (err, results) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({ totalEmployees: results[0].totalEmployees });
   });
-};*/
+};
+
+
+// ➕ Add new member
 export const addMember = (db) => async (req, res) => {
-  const { fullName, email, role, phone, department, password } = req.body;
+  const { fullName, email, role, phone, department, password, imagePath } = req.body;
 
   try {
     if (!password) return res.status(400).json({ error: "Password is required" });
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Step 1: Insert without empId
+    // ✅ Save image from Base64
+    let savedImagePath = null;
+    if (imagePath) {
+      const buffer = Buffer.from(imagePath, "base64");
+      const imageName = `member_${Date.now()}.png`;
+      const uploadDir = path.join("uploads", imageName);
+      fs.writeFileSync(uploadDir, buffer);
+      savedImagePath = `/uploads/${imageName}`;
+    }
+
     const sqlInsert = `
-      INSERT INTO members (fullName, email, phone, department, role, password)
-      VALUES (?, ?, ?, ?, ?, ?)
+      INSERT INTO members (fullName, email, phone, department, role, password, imagePath)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
     `;
-    const values = [fullName, email, phone, department, role, hashedPassword];
+    const values = [fullName, email, phone, department, role, hashedPassword, savedImagePath];
 
     db.query(sqlInsert, values, (err, result) => {
       if (err) return res.status(500).json({ error: err.message });
 
-      // Step 2: Generate empId using auto-increment id
       const empId = `TANSAMEMP${result.insertId.toString().padStart(3, "0")}`;
 
-      // Step 3: Update record with generated empId
       db.query(
         "UPDATE members SET empId = ? WHERE id = ?",
         [empId, result.insertId],
@@ -50,7 +54,7 @@ export const addMember = (db) => async (req, res) => {
 
           res.status(201).json({
             message: "Member added successfully",
-            empId, // return auto-generated empId to frontend
+            empId,
           });
         }
       );
@@ -59,12 +63,11 @@ export const addMember = (db) => async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
-// controllers/memberController.js
+
+// 🔍 Get member by email
 export const getMembersByEmail = (db) => (req, res) => {
-  const { email } = req.query; // ✅ extract email from query
-  if (!email) {
-    return res.status(400).json({ success: false, error: "Email is required" });
-  }
+  const { email } = req.query;
+  if (!email) return res.status(400).json({ success: false, error: "Email is required" });
 
   const sql = "SELECT * FROM members WHERE email = ?";
   db.query(sql, [email], (err, results) => {
@@ -75,9 +78,9 @@ export const getMembersByEmail = (db) => (req, res) => {
   });
 };
 
-export const getMembersById = (db) => (req, res) => {
+// 🔍 Get member by ID
+export const getMemberById = (db) => (req, res) => {
   const { id } = req.params;
-
   const sql = "SELECT * FROM members WHERE id = ?";
   db.query(sql, [id], (err, results) => {
     if (err) return res.status(500).json({ error: err.message });
@@ -85,72 +88,71 @@ export const getMembersById = (db) => (req, res) => {
     res.json(results[0]);
   });
 };
+
 // 📋 Get all members
 export const getMembers = (db) => (req, res) => {
-  const sql = `SELECT * FROM members`;
+  const sql = "SELECT * FROM members";
   db.query(sql, (err, results) => {
-    if (err) {
-      console.error("DB error:", err);
-      res.status(500).json({ error: err.message });
-      return;
-    }
-    console.log("Fetched members:", results);
+    if (err) return res.status(500).json({ error: err.message });
     res.json(results);
   });
 };
-export const getMemberById = (db) => (req, res) => {
-  const { id } = req.params;
-  const sql = `SELECT * FROM members WHERE id = ?`;
 
-  db.query(sql, [id], (err, results) => {
-    if (err) {
-      console.error("DB error:", err);
-      res.status(500).json({ error: err.message });
-      return;
-    }
-
-    if (results.length > 0) {
-      res.json(results[0]); // return single object
-    } else {
-      res.status(404).json({ message: "Member not found" });
-    }
-  });
-};
-
-// 🗑️ Delete a member
+// ❌ Delete a member
 export const deleteMember = (db) => (req, res) => {
   const { id } = req.params;
-  const sql = `DELETE FROM members WHERE id = ?`;
-
-  db.query(sql, [id], (err, result) => {
-    if (err) {
-      res.status(500).json({ error: err.message });
-      return;
-    }
+  const sql = "DELETE FROM members WHERE id = ?";
+  db.query(sql, [id], (err) => {
+    if (err) return res.status(500).json({ error: err.message });
     res.json({ success: true });
   });
 };
 
 // ✏️ Update a member
-export const updateMember = (db) => (req, res) => {
+export const updateMember = (db) => async (req, res) => {
   const { id } = req.params;
-  const { fullName, email, phone, empId, department, role, password } = req.body;
+  const { fullName, email, phone, empId, department, role, password, imagePath } = req.body;
 
-  const sql = `
-    UPDATE members
-    SET fullName = ?, email = ?, phone = ?, empId = ?, department = ?, role = ?, password = ?
-    WHERE id = ?
-  `;
+  try {
+    let savedImagePath = imagePath;
 
-  db.query(sql, [fullName, email, phone, empId, department, role, password, id], (err, result) => {
-    if (err) {
-      res.status(500).json({ error: err.message });
-      return;
+    if (imagePath && imagePath.length > 100) {
+      const buffer = Buffer.from(imagePath, "base64");
+      const imageName = `member_${Date.now()}.png`;
+      const uploadDir = path.join("uploads", imageName);
+      fs.writeFileSync(uploadDir, buffer);
+      savedImagePath = `/uploads/${imageName}`;
     }
-    res.json({ success: true });
-  });
+
+    let sql, values;
+
+    if (password) {
+      const hashedPassword = await bcrypt.hash(password, 10);
+      sql = `
+        UPDATE members
+        SET fullName = ?, email = ?, phone = ?, empId = ?, department = ?, role = ?, password = ?, imagePath = ?
+        WHERE id = ?
+      `;
+      values = [fullName, email, phone, empId, department, role, hashedPassword, savedImagePath, id];
+    } else {
+      sql = `
+        UPDATE members
+        SET fullName = ?, email = ?, phone = ?, empId = ?, department = ?, role = ?, imagePath = ?
+        WHERE id = ?
+      `;
+      values = [fullName, email, phone, empId, department, role, savedImagePath, id];
+    }
+
+    db.query(sql, values, (err) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ success: true });
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 };
 
+// 🔐 Login
 export const login = (db) => async (req, res) => {
   const { email, password } = req.body;
 
@@ -161,31 +163,110 @@ export const login = (db) => async (req, res) => {
       if (results.length === 0) return res.status(401).json({ error: "Invalid credentials" });
 
       const user = results[0];
-
       let isMatch = false;
 
       try {
-        // First try bcrypt
         isMatch = await bcrypt.compare(password, user.password);
-      } catch (e) {
+      } catch {
         isMatch = false;
       }
 
-      // If bcrypt fails AND the DB password is raw text, check direct match
-      if (!isMatch && user.password === password) {
-        isMatch = true;
-      }
-
-      if (!isMatch) {
-        return res.status(401).json({ error: "Invalid credentials" });
-      }
+      if (!isMatch && user.password === password) isMatch = true;
+      if (!isMatch) return res.status(401).json({ error: "Invalid credentials" });
 
       res.json({
         email: user.email,
         role: user.role,
+        imagePath: user.imagePath || null,
       });
     });
-  } catch (err) {
+  } catch {
     res.status(500).json({ error: "Server error" });
   }
+};
+
+// 📧 Request password reset
+export const requestPasswordReset = (db) => async (req, res) => {
+  const { email } = req.body;
+  if (!email) return res.status(400).json({ error: "Email is required" });
+
+  db.query("SELECT * FROM members WHERE email = ?", [email], async (err, results) => {
+    if (err) return res.status(500).json({ error: "DB error" });
+    if (results.length === 0) return res.status(404).json({ error: "User not found" });
+
+    const token = generateToken();
+    const expiry = Date.now() + 15 * 60 * 1000; // 15 minutes
+
+    db.query(
+      "UPDATE members SET reset_token = ?, reset_token_expiry = ? WHERE email = ?",
+      [token, expiry, email],
+      async (err2) => {
+        if (err2) return res.status(500).json({ error: "DB update failed" });
+
+        try {
+          let transporter = nodemailer.createTransport({
+            host: "smtp.gmail.com",
+            port: 587,
+            secure: false,
+            auth: {
+              user: "testaishwarya4@gmail.com",
+              pass: "ofjihgwnvlpdmvql", // ⚠️ replace with app password
+            },
+          });
+
+          const resetLink = `http://localhost:3000/reset-password?token=${token}`;
+
+          const mailOptions = {
+            from: '"Your App Name" <testaishwarya4@gmail.com>',
+            to: email,
+            subject: "Password Reset",
+            html: `
+              <p>Hello,</p>
+              <p>Click the link below to reset your password. It expires in 15 minutes:</p>
+              <a href="${resetLink}">${resetLink}</a>
+            `,
+          };
+
+          const info = await transporter.sendMail(mailOptions);
+          console.log("Mail sent: ", info.response);
+
+          return res.json({ success: true, message: "Reset link sent to email" });
+        } catch (mailError) {
+          console.error("Mail sending failed:", mailError);
+          return res.status(500).json({ error: "Failed to send reset email" });
+        }
+      }
+    );
+  });
+};
+
+// 🔑 Reset password
+export const resetPassword = (db) => async (req, res) => {
+  const { token, password } = req.body;
+  if (!token || !password) return res.status(400).json({ error: "Token and password required" });
+
+  db.query(
+    "SELECT * FROM members WHERE reset_token = ?",
+    [token],
+    async (err, results) => {
+      if (err) return res.status(500).json({ error: "DB error" });
+      if (results.length === 0) return res.status(400).json({ error: "Invalid token" });
+
+      const user = results[0];
+      if (Date.now() > user.reset_token_expiry) {
+        return res.status(400).json({ error: "Token expired" });
+      }
+
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      db.query(
+        "UPDATE members SET password = ?, reset_token = NULL, reset_token_expiry = NULL WHERE id = ?",
+        [hashedPassword, user.id],
+        (err2) => {
+          if (err2) return res.status(500).json({ error: "DB update failed" });
+          res.json({ success: true, message: "Password reset successful" });
+        }
+      );
+    }
+  );
 };
