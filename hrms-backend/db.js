@@ -28,12 +28,7 @@ import { addProjects, getProjects, updateProject, deleteProject} from "./control
 import { requestPasswordReset, resetPassword } from "./controller/memberController.js";
 
 
-import {
-  addProjects,
-  getProjects,
-  updateProject,
-  deleteProject,
-} from "./controller/projectController.js";
+
 
 
 const app = express();
