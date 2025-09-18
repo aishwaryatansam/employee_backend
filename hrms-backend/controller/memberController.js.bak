@@ -1,13 +1,11 @@
 import bcrypt from "bcryptjs";
-import fs from "fs";
-import path from "path";
 
 // controllers/memberController.js
 
 //
 /* ➕ Add new member
 export const addMember = (db) => (req, res) => {
-  const { fullName, email, phone, empId, department, role, password,  } = req.body;
+  const { fullName, email, phone, empId, department, role, password } = req.body;
 
   const sql = `
     INSERT INTO members (fullName, email, phone, empId, department, role, password)

@@ -1,17 +1,41 @@
-import React from "react";
+/**
+=========================================================
+* Material Dashboard 2 React - v2.2.0
+=========================================================
+
+* Product Page: https://www.creative-tim.com/product/material-dashboard-react
+* Copyright 2023 Creative Tim (https://www.creative-tim.com)
+
+Coded by www.creative-tim.com
+
+ =========================================================
+
+* The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+*/
+
+import React, { useState } from "react";
 
 // @mui components
 import Grid from "@mui/material/Grid";
 import Divider from "@mui/material/Divider";
+import Dialog from "@mui/material/Dialog";
+import DialogTitle from "@mui/material/DialogTitle";
+import DialogContent from "@mui/material/DialogContent";
+import DialogActions from "@mui/material/DialogActions";
+import TextField from "@mui/material/TextField";
+import IconButton from "@mui/material/IconButton";
 
 // @mui icons
 import FacebookIcon from "@mui/icons-material/Facebook";
 import TwitterIcon from "@mui/icons-material/Twitter";
 import InstagramIcon from "@mui/icons-material/Instagram";
+import EditIcon from "@mui/icons-material/Edit";
+import CloseIcon from "@mui/icons-material/Close";
 
 // Material Dashboard components
 import MDBox from "components/MDBox";
 import MDTypography from "components/MDTypography";
+import MDButton from "components/MDButton";
 
 // Layout and component imports
 import DashboardNavbar from "examples/Navbars/DashboardNavbar";
@@ -40,6 +64,118 @@ import team4 from "assets/images/team-4.jpg";
 import AdminSidebar from "layouts/dashboard/admin/adminsidebar";
 
 function Overview() {
+  const [profileData, setProfileData] = useState({
+    fullName: "Alec M. Thompson",
+    mobile: "(44) 123 1234 123",
+    email: "alecthompson@mail.com",
+    location: "USA",
+    description:
+      "Hi, I’m Alec Thompson, Decisions: If you can’t decide, the answer is no. If two equally difficult paths, choose the one more painful in the short term (pain avoidance is creating an illusion of equality).",
+  });
+
+  const [open, setOpen] = useState(false);
+  const [formData, setFormData] = useState(profileData);
+
+  const handleClickOpen = () => {
+    setOpen(true);
+    setFormData(profileData);
+  };
+
+  const handleClose = () => {
+    setOpen(false);
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prevData) => ({
+      ...prevData,
+      [name]: value,
+    }));
+  };
+
+  const handleSave = () => {
+    setProfileData(formData);
+    handleClose();
+  };
+
+  const renderEditDialog = () => (
+    <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">
+      <DialogTitle>
+        <MDBox display="flex" justifyContent="space-between" alignItems="center">
+          <MDTypography variant="h6">Edit Profile</MDTypography>
+          <IconButton onClick={handleClose}>
+            <CloseIcon />
+          </IconButton>
+        </MDBox>
+      </DialogTitle>
+      <DialogContent dividers>
+        <Grid container spacing={2}>
+          <Grid item xs={12}>
+            <TextField
+              fullWidth
+              label="Full Name"
+              name="fullName"
+              value={formData.fullName}
+              onChange={handleChange}
+              variant="outlined"
+            />
+          </Grid>
+          <Grid item xs={12}>
+            <TextField
+              fullWidth
+              label="Mobile"
+              name="mobile"
+              value={formData.mobile}
+              onChange={handleChange}
+              variant="outlined"
+            />
+          </Grid>
+          <Grid item xs={12}>
+            <TextField
+              fullWidth
+              label="Email"
+              name="email"
+              type="email"
+              value={formData.email}
+              onChange={handleChange}
+              variant="outlined"
+            />
+          </Grid>
+          <Grid item xs={12}>
+            <TextField
+              fullWidth
+              label="Location"
+              name="location"
+              value={formData.location}
+              onChange={handleChange}
+              variant="outlined"
+            />
+          </Grid>
+          <Grid item xs={12}>
+            <TextField
+              fullWidth
+              label="Description"
+              name="description"
+              value={formData.description}
+              onChange={handleChange}
+              multiline
+              rows={4}
+              variant="outlined"
+            />
+          </Grid>
+        </Grid>
+      </DialogContent>
+      <DialogActions>
+        <MDButton onClick={handleClose} color="secondary">
+          Cancel
+        </MDButton>
+        <MDButton onClick={handleSave} color="info">
+          Save
+        </MDButton>
+      </DialogActions>
+    </Dialog>
+  );
+
   return (
     <MDBox py={3} px={3} display="flex">
       {/* Admin Sidebar */}
@@ -56,12 +192,12 @@ function Overview() {
                 <Divider orientation="vertical" sx={{ ml: -2, mr: 1 }} />
                 <ProfileInfoCard
                   title="profile information"
-                  description="Hi, I’m Alec Thompson, Decisions: If you can’t decide, the answer is no. If two equally difficult paths, choose the one more painful in the short term (pain avoidance is creating an illusion of equality)."
+                  description={profileData.description}
                   info={{
-                    fullName: "Alec M. Thompson",
-                    mobile: "(44) 123 1234 123",
-                    email: "alecthompson@mail.com",
-                    location: "USA",
+                    fullName: profileData.fullName,
+                    mobile: profileData.mobile,
+                    email: profileData.email,
+                    location: profileData.location,
                   }}
                   social={[
                     {
@@ -80,14 +216,22 @@ function Overview() {
                       color: "instagram",
                     },
                   ]}
-                  action={{ route: "", tooltip: "Edit Profile" }}
+                  action={{
+                    route: "#",
+                    tooltip: "Edit Profile",
+                    icon: (
+                      <IconButton onClick={handleClickOpen} sx={{ p: 0 }}>
+                        <EditIcon />
+                      </IconButton>
+                    ),
+                  }}
                   shadow={false}
                 />
                 <Divider orientation="vertical" sx={{ mx: 0 }} />
               </Grid>
-              <Grid item xs={12} xl={4}>
+              {/* <Grid item xs={12} xl={4}>
                 <ProfilesList title="conversations" profiles={profilesListData} shadow={false} />
-              </Grid>
+              </Grid> */}
             </Grid>
           </MDBox>
 
@@ -137,6 +281,7 @@ function Overview() {
           </MDBox>
         </Header>
         <Footer />
+        {renderEditDialog()}
       </MDBox>
     </MDBox>
   );
