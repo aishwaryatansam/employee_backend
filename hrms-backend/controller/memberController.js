@@ -7,6 +7,14 @@ import path from "path";
 function generateToken() {
   return Math.random().toString(36).substr(2) + Date.now().toString(36);
 }
+export const getEmployeeCount = (db) => (req, res) => {
+  const sql = "SELECT COUNT(*) AS totalEmployees FROM members";
+  db.query(sql, (err, results) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({ totalEmployees: results[0].totalEmployees });
+  });
+};
+
 
 // ➕ Add new member
 export const addMember = (db) => async (req, res) => {

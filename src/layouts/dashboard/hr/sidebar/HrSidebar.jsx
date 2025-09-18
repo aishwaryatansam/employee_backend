@@ -55,6 +55,7 @@ const HrSidebar = () => {
         <ul style={{ listStyle: "none", paddingLeft: 0, margin: 0 }}>
           {[
             { to: "/hr/dashboard", icon: "dashboard", label: "HR Dashboard" },
+            { to: "/employee-time", icon: "access_time", label: "Timesheet" },
             { to: "/hr/create-project", icon: "add_box", label: "Create Project" },
             { to: "/hr/create-employee", icon: "add_box", label: "Create Employee" },
             { to: "/hr/company-overview", icon: "business", label: "Company Overview" },

@@ -179,13 +179,38 @@ const AddMembers = () => {
                 </Grid>
 
                 <Grid item xs={12} md={4}>
-                  <TextField
-                    fullWidth
-                    label="Department (optional)"
-                    name="department"
-                    value={formData.department}
-                    onChange={handleChange}
-                  />
+                  <FormControl fullWidth required>
+                    <InputLabel id="department-label">Department *</InputLabel>
+                    <Select
+                      labelId="department-label"
+                      name="department"
+                      value={formData.department}
+                      onChange={handleChange}
+                      label="Department *"
+                    >
+                      <MenuItem value="Innovative Manufacturing">
+                        Innovative Manufacturing
+                      </MenuItem>
+                      <MenuItem value="Smart Factory Center">
+                        Smart Factory Center
+                      </MenuItem>
+                      <MenuItem value="AR | VR | MR Research Centre">
+                        AR | VR | MR Research Centre
+                      </MenuItem>
+                      <MenuItem value="Research Centre For PLM">
+                        Research Centre For PLM
+                      </MenuItem>
+                      <MenuItem value="Research Centre For Asset Performance">
+                        Research Centre For Asset Performance
+                      </MenuItem>
+                      <MenuItem value="Product Innovation Center">
+                        Product Innovation Center
+                      </MenuItem>
+                      <MenuItem value="Predictive Engineering">
+                        Predictive Engineering
+                      </MenuItem>
+                    </Select>
+                  </FormControl>
                 </Grid>
 
                 <Grid item xs={12} md={4}>
