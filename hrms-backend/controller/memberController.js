@@ -1,27 +1,14 @@
 import bcrypt from "bcryptjs";
+import nodemailer from "nodemailer";
 import fs from "fs";
 import path from "path";
 
-// controllers/memberController.js
+// 🔑 Token generator
+function generateToken() {
+  return Math.random().toString(36).substr(2) + Date.now().toString(36);
+}
 
-//
-/* ➕ Add new member
-export const addMember = (db) => (req, res) => {
-  const { fullName, email, phone, empId, department, role, password,  } = req.body;
-
-  const sql = `
-    INSERT INTO members (fullName, email, phone, empId, department, role, password)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
-  `;
-
-  db.query(sql, [fullName, email, phone, empId, department, role, password], (err, result) => {
-    if (err) {
-      res.status(500).json({ error: err.message });
-      return;
-    }
-    res.json({ success: true, memberId: result.insertId });
-  });
-};*/
+// ➕ Add new member
 export const addMember = (db) => async (req, res) => {
   const { fullName, email, role, phone, department, password, imagePath } = req.body;
 
@@ -190,6 +177,7 @@ export const login = (db) => async (req, res) => {
   }
 };
 
+// 📧 Request password reset
 export const requestPasswordReset = (db) => async (req, res) => {
   const { email } = req.body;
   if (!email) return res.status(400).json({ error: "Email is required" });
@@ -208,14 +196,13 @@ export const requestPasswordReset = (db) => async (req, res) => {
         if (err2) return res.status(500).json({ error: "DB update failed" });
 
         try {
-          // ✅ Nodemailer transporter for Gmail with App Password
           let transporter = nodemailer.createTransport({
             host: "smtp.gmail.com",
             port: 587,
             secure: false,
             auth: {
               user: "testaishwarya4@gmail.com",
-              pass: "ofjihgwnvlpdmvql", // replace this with your App Password
+              pass: "ofjihgwnvlpdmvql", // ⚠️ replace with app password
             },
           });
 
@@ -244,6 +231,8 @@ export const requestPasswordReset = (db) => async (req, res) => {
     );
   });
 };
+
+// 🔑 Reset password
 export const resetPassword = (db) => async (req, res) => {
   const { token, password } = req.body;
   if (!token || !password) return res.status(400).json({ error: "Token and password required" });
