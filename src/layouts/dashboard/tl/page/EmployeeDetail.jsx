@@ -47,8 +47,8 @@ const EmployeeDetail = () => {
 
     // Get existing data for this date
     const entry = timecardData.find((d) => formatDate(d.date) === formatted);
-    const timesheetId = entry.id;
-    const memberId = employee.id;
+    //const timesheetId = entry.id;
+    //const memberId = employee.id;
     if (entry) {
       setSelectedTimesheetId(entry.id);
       setSelectedMemberId(employee.id);
@@ -156,7 +156,7 @@ const EmployeeDetail = () => {
       alert("⚠️ Network error while updating approval status. Please try again.");
     }
   };
-
+const navigate = useNavigate();
   const selectedEmp = members.find((emp) => emp.id === id);
   /*
   localStorage.setItem("employee_hourly_details", JSON.stringify(hourlyDetails));
