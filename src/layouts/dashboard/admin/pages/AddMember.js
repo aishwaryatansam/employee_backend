@@ -49,9 +49,12 @@ const AddMembers = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$/;
+    const passwordRegex =
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$/;
     if (!passwordRegex.test(formData.password)) {
-      alert("Password must include uppercase, lowercase, number, special character and be at least 8 characters long.");
+      alert(
+        "Password must include uppercase, lowercase, number, special character and be at least 8 characters long."
+      );
       return;
     }
 
@@ -104,9 +107,43 @@ const AddMembers = () => {
                 <Grid item xs={12} md={4}>
                   <TextField fullWidth label="Phone Number" name="phone" value={formData.phone} onChange={handleChange} required />
                 </Grid>
+
+                {/* Department Dropdown */}
                 <Grid item xs={12} md={4}>
-                  <TextField fullWidth label="Department (optional)" name="department" value={formData.department} onChange={handleChange} />
+                  <FormControl fullWidth required>
+                    <InputLabel id="department-label">Department *</InputLabel>
+                    <Select
+                      labelId="department-label"
+                      name="department"
+                      value={formData.department}
+                      onChange={handleChange}
+                      label="Department *"
+                    >
+                      <MenuItem value="Innovative Manufacturing">
+                        Innovative Manufacturing
+                      </MenuItem>
+                      <MenuItem value="Smart Factory Center">
+                        Smart Factory Center
+                      </MenuItem>
+                      <MenuItem value="AR | VR | MR Research Centre">
+                        AR | VR | MR Research Centre
+                      </MenuItem>
+                      <MenuItem value="Research Centre For PLM">
+                        Research Centre For PLM
+                      </MenuItem>
+                      <MenuItem value="Research Centre For Asset Performance">
+                        Research Centre For Asset Performance
+                      </MenuItem>
+                      <MenuItem value="Product Innovation Center">
+                        Product Innovation Center
+                      </MenuItem>
+                      <MenuItem value="Predictive Engineering">
+                        Predictive Engineering
+                      </MenuItem>
+                    </Select>
+                  </FormControl>
                 </Grid>
+
                 <Grid item xs={12} md={4}>
                   <FormControl fullWidth required>
                     <InputLabel id="role-label">Role *</InputLabel>
@@ -118,6 +155,7 @@ const AddMembers = () => {
                     </Select>
                   </FormControl>
                 </Grid>
+
                 <Grid item xs={12} md={4}>
                   <TextField
                     fullWidth type={showPassword ? "text" : "password"} label="Password *" name="password"
@@ -139,7 +177,7 @@ const AddMembers = () => {
                   )}
                 </Grid>
 
-                {/* Image Upload Styled as TextField */}
+                {/* Image Upload */}
                 <Grid item xs={12} md={4}>
                   <Box sx={{ position: "relative", width: "100%" }}>
                     <TextField
