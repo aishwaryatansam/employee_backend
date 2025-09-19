@@ -220,7 +220,8 @@ useEffect(() => {
   const daysInMonth = getAllDatesInMonth(selectedYear, selectedMonth);
 
   const phases = ["Design", "Development", "Testing", "Deployment"];
-  const tasks = ["UI Fixes", "API Integration", "Bug Fixes", "Documentation"];
+  // const tasks = ["UI Fixes", "API Integration", "Bug Fixes", "Documentation"];
+  const tasks = ["Internal Meeting", "Customer Meeting","General"];;
 
   const formatHour = (hour) => {
     if (hour === 12) return "12 PM";
