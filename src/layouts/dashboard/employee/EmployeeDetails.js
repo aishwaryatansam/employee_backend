@@ -19,6 +19,7 @@ const EmployeeDetails = () => {
   const [overtimeHours, setOvertimeHours] = useState("");
   const [employee, setEmployee] = useState({});
   const [timecardData, setTimecardData] = useState([]);
+  const [projects, setProjects] = useState([]);
 
   const padTime = (t) => (t && t.match(/^\d{2}:\d{2}$/) ? t + ":00" : t || "00:00:00");
 
@@ -79,6 +80,17 @@ useEffect(() => {
     })
     .catch((err) => console.error("Fetch error (CEO):", err));
 }, []);
+useEffect(() => {
+  fetch("http://localhost:3001/getProjects")
+    .then((res) => res.json())
+    .then((data) => {
+      if (Array.isArray(data)) {
+        setProjects(data);
+      }
+    })
+    .catch((err) => console.error("Error fetching projects:", err));
+}, []);
+
  // empty deps = fetch once on mount
 
   // Fetch backend data (optional, for future use)
@@ -633,15 +645,23 @@ useEffect(() => {
                             <option>Internal</option>
                           </select>
                         </div>
-                        <div className="field">
-                          <label>Project Name</label>
-                          <input
-                            type="text"
-                            value={hourData.name || ""}
-                            onChange={(e) => updateHourDetail(hour, "name", e.target.value)}
-                            disabled={formMode === "Leave"}
-                          />
-                        </div>
+             <div className="field">
+  <label>Project Name</label>
+  <select
+    value={hourData.name || ""}
+    onChange={(e) => updateHourDetail(hour, "name", e.target.value)}
+    disabled={formMode === "Leave"}
+  >
+    <option value="">Select Project</option>
+    {projects.map((project) => (
+      <option key={project.id} value={project.projectName}>
+        {project.projectName}
+      </option>
+    ))}
+  </select>
+</div>
+
+
                         <div className="field">
                           <label>Project Phase</label>
                           <select
