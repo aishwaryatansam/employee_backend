@@ -1,19 +1,4 @@
-/**
-=========================================================
-* Material Dashboard 2 React - v2.2.0
-=========================================================
-
-* Product Page: https://www.creative-tim.com/product/material-dashboard-react
-* Copyright 2023 Creative Tim (https://www.creative-tim.com)
-
-Coded by www.creative-tim.com
-
- =========================================================
-
-* The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-*/
-
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";  // ✅ added useEffect
 
 // @mui components
 import Grid from "@mui/material/Grid";
@@ -65,25 +50,54 @@ import AdminSidebar from "layouts/dashboard/admin/adminsidebar";
 
 function Overview() {
   const [profileData, setProfileData] = useState({
-    fullName: "Alec M. Thompson",
-    mobile: "(44) 123 1234 123",
-    email: "alecthompson@mail.com",
-    location: "USA",
+    fullName: "",
+    email: "",
+    phone: "",
+    location: "USA", // keep static
     description:
-      "Hi, I’m Alec Thompson, Decisions: If you can’t decide, the answer is no. If two equally difficult paths, choose the one more painful in the short term (pain avoidance is creating an illusion of equality).",
+      "Hi, I’m Alec Thompson, Decisions: If you can’t decide, the answer is no...",
   });
 
   const [open, setOpen] = useState(false);
   const [formData, setFormData] = useState(profileData);
+
+  // ✅ Fetch logged-in user details
+  useEffect(() => {
+    const loggedInEmail = localStorage.getItem("userEmail"); // stored at login
+    if (loggedInEmail) {
+      fetch("http://localhost:3001/api/members")
+        .then((res) => res.json())
+        .then((data) => {
+          const user = data.find((member) => member.email === loggedInEmail);
+          if (user) {
+            setProfileData({
+              fullName: user.fullName,
+              email: user.email,
+              phone: user.phone, // ✅ using backend phone field
+              location: "USA", // static
+              description:
+                "Hi, I’m Alec Thompson, Decisions: If you can’t decide, the answer is no...",
+            });
+            setFormData({
+              fullName: user.fullName,
+              email: user.email,
+              phone: user.phone,
+              location: "USA",
+              description:
+                "Hi, I’m Alec Thompson, Decisions: If you can’t decide, the answer is no...",
+            });
+          }
+        })
+        .catch((err) => console.error("Error fetching profile:", err));
+    }
+  }, []);
 
   const handleClickOpen = () => {
     setOpen(true);
     setFormData(profileData);
   };
 
-  const handleClose = () => {
-    setOpen(false);
-  };
+  const handleClose = () => setOpen(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -124,8 +138,8 @@ function Overview() {
             <TextField
               fullWidth
               label="Mobile"
-              name="mobile"
-              value={formData.mobile}
+              name="phone"   // ✅ backend field is phone
+              value={formData.phone}
               onChange={handleChange}
               variant="outlined"
             />
@@ -141,6 +155,7 @@ function Overview() {
               variant="outlined"
             />
           </Grid>
+          {/* Leaving Location & Description fields static but editable if you want */}
           <Grid item xs={12}>
             <TextField
               fullWidth
@@ -195,7 +210,7 @@ function Overview() {
                   description={profileData.description}
                   info={{
                     fullName: profileData.fullName,
-                    mobile: profileData.mobile,
+                    mobile: profileData.phone,   // ✅ using phone
                     email: profileData.email,
                     location: profileData.location,
                   }}
@@ -235,7 +250,8 @@ function Overview() {
             </Grid>
           </MDBox>
 
-          <MDBox pt={2} px={2} lineHeight={1.25}>
+          {/* Projects Section (unchanged) */}
+          {/* <MDBox pt={2} px={2} lineHeight={1.25}>
             <MDTypography variant="h6" fontWeight="medium">
               Projects
             </MDTypography>
@@ -254,14 +270,12 @@ function Overview() {
                     image={img}
                     label={`project #${index + 1}`}
                     title={["modern", "scandinavian", "minimalist", "gothic"][index]}
-                    description={
-                      [
-                        "As Uber works through a huge amount of internal management turmoil.",
-                        "Music is something that everyone has their own specific opinion about.",
-                        "Different people have different taste, and various types of music.",
-                        "Why would anyone pick blue over pink? Pink is obviously a better color.",
-                      ][index]
-                    }
+                    description={[
+                      "As Uber works through a huge amount of internal management turmoil.",
+                      "Music is something that everyone has their own specific opinion about.",
+                      "Different people have different taste, and various types of music.",
+                      "Why would anyone pick blue over pink? Pink is obviously a better color.",
+                    ][index]}
                     action={{
                       type: "internal",
                       route: "/pages/profile/profile-overview",
@@ -278,7 +292,7 @@ function Overview() {
                 </Grid>
               ))}
             </Grid>
-          </MDBox>
+          </MDBox> */}
         </Header>
         <Footer />
         {renderEditDialog()}
