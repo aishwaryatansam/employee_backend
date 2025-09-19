@@ -162,39 +162,52 @@ const handleRowClick = async (project) => {
   const header = ["Name", "Role", "Type", "Regular", "Overtime", "Total Hours"];
   /*  const header = ["Name", "Role", "Type", "Regular", "Overtime", "Sick Leave", "Total Hours"];*/
 
- 
-  const handleCreateReport = () => {
-    if (!selectedDate) {
-      toast.warning("Please select a date to generate a report.");
-      return;
-    }
+const handleCreateReport = () => {
+  let csvContent = "Project Name,Employee,Hour,Project Type,Project Phase,Project Task\n";
 
-    const csvContent = employees
-      .map((emp) => {
-        const data = emp.timesheet?.[selectedDate.toString()] || {};
-        return [
-          emp.name,
-          emp.role,
-          emp.type,
-       
-        ].join(",");
-      })
-      .join("\n");
+  if (filteredProjects.length === 0) {
+    // No projects for selected month/year
+    csvContent = `Project Name\nNo projects found for ${selectedMonth + 1}/${selectedYear}`;
+  } else {
+    filteredProjects.forEach((project) => {
+      // Get all hour details matching this project
+      const projectDetails = hourDetails.filter((entry) => {
+        const blocks = entry.hourBlocks ? JSON.parse(entry.hourBlocks) : [];
+        return blocks.some((b) => b.projectName === project.projectName);
+      });
 
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.setAttribute(
-      "download",
-      `timesheet-${selectedDate}-${selectedMonth + 1}-${selectedYear}.csv`
-    );
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+      if (projectDetails.length > 0) {
+        projectDetails.forEach((entry) => {
+          const blocks = entry.hourBlocks ? JSON.parse(entry.hourBlocks) : [];
+          blocks.forEach((b) => {
+            if (b.projectName === project.projectName) {
+              const member = members.find((m) => m.id === entry.memberId);
+              csvContent += `${project.projectName},${member?.fullName || "Unknown"},${b.hour},${b.projectType || "-"},${b.projectPhase || "-"},${b.projectTask || "-"}\n`;
+            }
+          });
+        });
+      } else {
+        // Project exists but no hourBlocks yet
+        csvContent += `${project.projectName},,,,-,-\n`;
+      }
+    });
+  }
 
-    toast.success("Timesheet report downloaded!");
-  };
+  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.setAttribute(
+    "download",
+    `timesheet-${selectedMonth + 1}-${selectedYear}.csv`
+  );
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+
+  toast.success("Timesheet report downloaded!");
+};
+
 
 
   const AddProject = () => (
