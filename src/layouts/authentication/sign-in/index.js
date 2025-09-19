@@ -59,7 +59,7 @@ const handleLogin = async (e) => {
     if (data.role === "admin") {
       navigate("/dashboard/admin");
     } else if (data.role === "employee") {
-      navigate("/dashboard");
+      navigate("/employee-time");
     } else if (data.role === "tl") {
       navigate("/tldashboard");
     } else if (data.role === "hr") {
