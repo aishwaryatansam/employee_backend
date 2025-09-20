@@ -30,7 +30,7 @@ const AdminSidebar = () => {
       sx={{
         width: "240px",
         height: "calc(100vh - 30px)",
-        backgroundColor: "#1e1e2f",
+        backgroundColor: "#00569A",
         position: "fixed",
         top: "15px",
         left: "15px",

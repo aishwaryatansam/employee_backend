@@ -397,10 +397,11 @@ function TLAddProject() {
                             Add Task
                           </MDButton>
                           <Button
-                            onClick={() => handleRemoveTask(phaseIndex, taskIndex)}
+                            onClick={() => handleRemoveTask(phases.length - 1)} // remove last
                             variant="contained"
                             size="small"
                             color="error"
+                            disabled={phases.length === 0}
                           >
                             Remove Task
                           </Button>
@@ -417,10 +418,11 @@ function TLAddProject() {
                         Add Phase
                       </MDButton>
                       <Button
-                        onClick={() => handleRemovePhase(phaseIndex)}
+                        onClick={() => handleRemovePhase(phases.length - 1)} // remove last
                         variant="contained"
                         size="small"
                         color="error"
+                        disabled={phases.length === 0}
                       >
                         Remove Phase
                       </Button>
