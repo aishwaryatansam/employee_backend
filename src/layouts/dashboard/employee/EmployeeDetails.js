@@ -35,7 +35,7 @@ const EmployeeDetails = () => {
       if (hour === 13) continue; // skip lunch break
       const details = dayData[hour] || {};
       hourBlocks.push({
-        hour,
+        hour: formatHourRange(hour),
         projectType: details.type || "",
         projectCategory: details.category || "",
         projectName: details.name || "",
@@ -292,6 +292,13 @@ useEffect(() => {
 
     setShowPopupForm(true);
   };
+// Utility function
+const formatHourRange = (hour) => {
+  const start = hour > 12 ? `${hour - 12} PM` : `${hour} AM`;
+  const endHour = hour + 1;
+  const end = endHour > 12 ? `${endHour - 12} PM` : `${endHour} AM`;
+  return `${start} - ${end}`;
+};
 
   const closeEditPopup = () => {
     setShowPopupForm(false);
