@@ -65,7 +65,7 @@ const EmployeeSidebar = () => {
           {[
             // { to: "/dashboard", icon: "dashboard", label: "Dashboard" },
             { to: "/employee-time", icon: "access_time", label: "Timesheet" },
-            { to: "/authentication/sign-in", icon: "login", label: "Sign In" },
+            // { to: "/authentication/sign-in", icon: "login", label: "Sign In" },
           ].map(({ to, icon, label }) => (
             <li key={label}>
               <NavLink
