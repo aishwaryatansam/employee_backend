@@ -8,6 +8,7 @@ import { FormControl, InputLabel, Select, MenuItem } from "@mui/material";
 import { Dashboard } from "@mui/icons-material";
 import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
 import DashboardNavbar from "examples/Navbars/DashboardNavbar";
+import AdminSidebar from "layouts/dashboard/admin/adminsidebar";
 import Footer from "examples/Footer";
 import TLAddProject from "./TLAddProject";
 
@@ -28,6 +29,7 @@ const Timesheet = () => {
   const [projects, setProjects] = useState([]); // not undefined
   const [selectedProjectDetails, setSelectedProjectDetails] = useState([]);
   const [members, setMembers] = useState([]);
+  const [selectedEmployee, setSelectedEmployee] = useState(null);
 
   useEffect(() => {
     fetch("http://localhost:3001/api/members")
@@ -198,6 +200,7 @@ const handleRowClick = async (project) => {
 
   return (
     <DashboardLayout>
+      <AdminSidebar />
       <DashboardNavbar />
       <div className="container">
         <div className="main">
@@ -359,50 +362,58 @@ const handleRowClick = async (project) => {
               </table>
               {selectedProjectDetails.length > 0 && (
                 <div className="project-details">
-                  <h3>Project Details</h3>
+                  <h3>Employees in Project</h3>
                   <table className="table">
+                    <thead>
+                      <tr>
+                        <th>Employee</th>
+                        <th>Role</th>
+                        <th>Total Hours</th>
+                      </tr>
+                    </thead>
                     <tbody>
-                      {selectedProjectDetails.map((detail, index) => {
-                        const blocks = Array.isArray(detail.hourBlocks) ? detail.hourBlocks : [];
-
-                        return (
-                          <React.Fragment key={index}>
-                            {/* HourBlocks nested table */}
-                            {blocks.length > 0 && (
-                              <tr>
-                                <td colSpan={5}>
-                                  <table className="table table-sm table-bordered">
-                                    <thead>
-                                      <tr>
-                                        <th>Employee</th>
-                                        <th>Hour</th>
-                                        <th>Project Type</th>
-                                        <th>Project Name</th>
-                                        <th>Project Phase</th>
-                                        <th>Project Task</th>
-                                      </tr>
-                                    </thead>
-                                    <tbody>
-                                      {blocks.map((b, i) => (
-                                        <tr key={i}>
-                                          <td>{b.fullName}</td>
-                                          <td>{b.hour}</td>
-                                          <td>{b.projectType || "-"}</td>
-                                          <td>{b.projectName || "-"}</td>
-                                          <td>{b.projectPhase || "-"}</td>
-                                          <td>{b.projectTask || "-"}</td>
-                                        </tr>
-                                      ))}
-                                    </tbody>
-                                  </table>
-                                </td>
-                              </tr>
-                            )}
-                          </React.Fragment>
-                        );
-                      })}
+                      {selectedProjectDetails.map((detail, index) => (
+                        <tr
+                          key={index}
+                          onClick={() => setSelectedEmployee(detail)} // 👈 set clicked employee
+                          style={{ cursor: "pointer" }}
+                        >
+                          <td>{detail.fullname}</td>
+                          <td>{detail.role}</td>
+                          <td>{detail.totalHours}</td>
+                        </tr>
+                      ))}
                     </tbody>
                   </table>
+
+                  {/* Nested details only when employee is clicked */}
+                  {selectedEmployee && (
+                    <div className="employee-details">
+                      <h4>Details for {selectedEmployee.fullname}</h4>
+                      <table className="table table-bordered">
+                        <thead>
+                          <tr>
+                            <th>Hour</th>
+                            <th>Project Type</th>
+                            <th>Project Name</th>
+                            <th>Project Phase</th>
+                            <th>Project Task</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {selectedEmployee.hourBlocks.map((b, i) => (
+                            <tr key={i}>
+                              <td>{b.hour}</td>
+                              <td>{b.projectType || "-"}</td>
+                              <td>{b.projectName || "-"}</td>
+                              <td>{b.projectPhase || "-"}</td>
+                              <td>{b.projectTask || "-"}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
                 </div>
               )}
 

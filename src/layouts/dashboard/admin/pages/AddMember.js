@@ -15,7 +15,7 @@ import {
   Snackbar,
   Alert,
 } from "@mui/material";
-import { Visibility, VisibilityOff, Delete} from "@mui/icons-material";
+import { Visibility, VisibilityOff, Delete } from "@mui/icons-material";
 
 import DashboardNavbar from "examples/Navbars/DashboardNavbar";
 import AdminSidebar from "layouts/dashboard/admin/adminsidebar";
@@ -29,7 +29,7 @@ const AddMembers = () => {
     empId: "",
     department: "",
     password: "",
-    imagePath: ""
+    imagePath: "",
   });
 
   const [showPassword, setShowPassword] = useState(false);
@@ -42,7 +42,7 @@ const AddMembers = () => {
     if (name === "password") setShowExample(value.length > 0);
   };
 
- const handleImageChange = (e) => {
+  const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
@@ -99,7 +99,7 @@ const AddMembers = () => {
         empId: "",
         department: "",
         password: "",
-        imagePath: ""
+        imagePath: "",
       });
       setShowExample(false);
     } catch (error) {
@@ -188,27 +188,19 @@ const AddMembers = () => {
                       onChange={handleChange}
                       label="Department *"
                     >
-                      <MenuItem value="Innovative Manufacturing">
-                        Innovative Manufacturing
-                      </MenuItem>
-                      <MenuItem value="Smart Factory Center">
-                        Smart Factory Center
-                      </MenuItem>
+                      <MenuItem value="Innovative Manufacturing">Innovative Manufacturing</MenuItem>
+                      <MenuItem value="Smart Factory Center">Smart Factory Center</MenuItem>
                       <MenuItem value="AR | VR | MR Research Centre">
                         AR | VR | MR Research Centre
                       </MenuItem>
-                      <MenuItem value="Research Centre For PLM">
-                        Research Centre For PLM
-                      </MenuItem>
+                      <MenuItem value="Research Centre For PLM">Research Centre For PLM</MenuItem>
                       <MenuItem value="Research Centre For Asset Performance">
                         Research Centre For Asset Performance
                       </MenuItem>
                       <MenuItem value="Product Innovation Center">
                         Product Innovation Center
                       </MenuItem>
-                      <MenuItem value="Predictive Engineering">
-                        Predictive Engineering
-                      </MenuItem>
+                      <MenuItem value="Predictive Engineering">Predictive Engineering</MenuItem>
                     </Select>
                   </FormControl>
                 </Grid>
@@ -260,7 +252,7 @@ const AddMembers = () => {
                     </Typography>
                   )}
                 </Grid>
-{/* Image Upload Styled as TextField */}
+                {/* Image Upload Styled as TextField */}
                 <Grid item xs={12} md={4}>
                   <Box sx={{ position: "relative", width: "100%" }}>
                     <TextField
