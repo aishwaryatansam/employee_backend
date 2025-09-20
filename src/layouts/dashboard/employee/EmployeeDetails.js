@@ -385,9 +385,9 @@ useEffect(() => {
         <>
           <div className={`employee-detail-container ${showPopupForm ? "blur" : ""}`}>
             <div className="header">
-              <Link to="/" className="back-link">
+              {/* <Link to="/" className="back-link">
                 ← Back
-              </Link>
+              </Link> */}
               <h1>Time & Attendance</h1>
             </div>
             <div className="profile-section">

@@ -60,8 +60,12 @@ function Basic() {
       // }
       if (data.role === "admin") {
         navigate("/members");
-      } else if (data.role === "employee") {
-        navigate("/dashboard");
+      }
+      // else if (data.role === "employee") {
+      //   navigate("/dashboard");
+      // }
+      else if (data.role === "employee") {
+        navigate("/employee-time");
       } else if (data.role === "tl") {
         navigate("/tldashboard");
       } else if (data.role === "hr") {
