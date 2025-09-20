@@ -60,10 +60,10 @@ const AdminSidebar = () => {
             { to: "/dashboard/admin", icon: "dashboard", label: "Dashboard" },
             { to: "/members", icon: "group", label: "Employees" },
             { to: "/add-member", icon: "person_add", label: "Add Member" },
-             { to: "/projectStatus", icon: "projects", label: "Project status" },
+            { to: "/projectStatus", icon: "projects", label: "Project status" },
             // { to: "/profile", icon: "account_circle", label: "Profile" },
             // { to: "/notifications", icon: "notifications", label: "Notifications" },
-            { to: "/authentication/sign-in", icon: "login", label: "Sign In" },
+            // { to: "/authentication/sign-in", icon: "login", label: "Sign In" },
           ].map(({ to, icon, label }) => (
             <li key={label}>
               <NavLink
