@@ -57,7 +57,7 @@ const AdminSidebar = () => {
         {/* Navigation Links */}
         <ul style={{ listStyle: "none", paddingLeft: 0, margin: 0 }}>
           {[
-            { to: "/dashboard/admin", icon: "dashboard", label: "Dashboard" },
+            // { to: "/dashboard/admin", icon: "dashboard", label: "Dashboard" },
             { to: "/members", icon: "group", label: "Employees" },
             { to: "/add-member", icon: "person_add", label: "Add Member" },
             { to: "/projectStatus", icon: "projects", label: "Project status" },
