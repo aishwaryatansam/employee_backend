@@ -11,7 +11,10 @@ import AdminSidebar from "layouts/dashboard/admin/adminsidebar";
 const AddMembers = () => {
   const [formData, setFormData] = useState({
     fullName: "", email: "", role: "hr", phone: "",
-    empId: "", department: "", password: "", imagePath: ""
+    empId: "",
+    department: "",
+    password: "",
+    imagePath: "",
   });
 
   const [showPassword, setShowPassword] = useState(false);
