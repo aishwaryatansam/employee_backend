@@ -32,6 +32,7 @@ const EmployeeDetails = () => {
     const overtime = parseFloat(overtimeHours) || 0;
     const hourBlocks = [];
     for (let hour = 10; hour <= 18; hour++) {
+      if (hour === 13) continue; // skip lunch break
       const details = dayData[hour] || {};
       hourBlocks.push({
         hour,
@@ -390,7 +391,7 @@ useEffect(() => {
               <h1>Time & Attendance</h1>
             </div>
             <div className="profile-section">
-              <img src="https://via.placeholder.com/60" alt="Employee" className="profile-pic" />
+              {/* <img src="https://via.placeholder.com/60" alt="Employee" className="profile-pic" /> */}
               <div className="profile-info">
                 <h2>{employee?.fullName || "No name found"}</h2>
                 <p className="role">{employee?.role || "No role found"}</p>
@@ -402,7 +403,7 @@ useEffect(() => {
                 <p>{holiday} Holiday</p>
               </div>
             </div>
-            <div className="progress-section">
+            {/* <div className="progress-section">
               <p className="progress-text">Hour breakdown: 264 hrs</p>
               <div className="progress-bar">
                 <div className="approved" style={{ width: "70%" }}></div>
@@ -414,7 +415,7 @@ useEffect(() => {
                 <span className="legend red">{overtime} hrs Overtime</span>
                 <span className="legend orange">{holiday} Holidays</span>
               </div>
-            </div>
+            </div> */}
             <div className="tabs">
               <button
                 className={`tab ${activeTab === "timecard" ? "active" : ""}`}
@@ -633,6 +634,7 @@ useEffect(() => {
                   </div>
                   {[...Array(9)].map((_, i) => {
                     const hour = 10 + i;
+                    if (hour === 13) return null;
                     const hourData = hourlyDetails[selectedDate]?.[hour] || {};
                     return (
                       <div key={i} className="hour-block">
