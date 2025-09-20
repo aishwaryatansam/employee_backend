@@ -185,11 +185,14 @@ function TLAddProject() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!projectName || !description || !startDate || !endDate) {
+    // if (!projectName || !description || !startDate || !endDate) {
+    //   toast.error("Please fill in all required fields");
+    //   return;
+    // }
+    if (!projectName || !description) {
       toast.error("Please fill in all required fields");
       return;
     }
-
     const newProject = {
       projectName,
       projectType,
@@ -347,7 +350,7 @@ function TLAddProject() {
                         />
                         {phase.tasks.map((task, taskIndex) => (
                           <Grid container spacing={2} alignItems="center" mb={1} key={taskIndex}>
-                            <Grid item xs={6}>
+                            {/* <Grid item xs={6}>
                               <TextField
                                 fullWidth
                                 label="Task Name"
@@ -361,8 +364,8 @@ function TLAddProject() {
                                   )
                                 }
                               />
-                            </Grid>
-                            <Grid item xs={6}>
+                            </Grid> */}
+                            {/* <Grid item xs={6}>
                               <FormControl fullWidth>
                                 <InputLabel>Assign To</InputLabel>
                                 <TextField
@@ -384,11 +387,11 @@ function TLAddProject() {
                                   ))}
                                 </TextField>
                               </FormControl>
-                            </Grid>
+                            </Grid> */}
                           </Grid>
                         ))}
                         <Box mt={4} display="flex" gap={2}>
-                          <MDButton
+                          {/* <MDButton
                             onClick={() => handleAddTask(phaseIndex)}
                             variant="gradient"
                             color="info"
@@ -404,7 +407,7 @@ function TLAddProject() {
                             disabled={phases.length === 0}
                           >
                             Remove Task
-                          </Button>
+                          </Button> */}
                         </Box>
                       </Box>
                     ))}
@@ -582,7 +585,7 @@ function TLAddProject() {
                             <Typography variant="body2">
                               <strong>Phase {pIndex + 1}:</strong> {phase.phaseName || "(No Name)"}
                             </Typography>
-                            {phase.tasks && phase.tasks.length > 0 ? (
+                            {/* {phase.tasks && phase.tasks.length > 0 ? (
                               <ul style={{ marginTop: 4 }}>
                                 {phase.tasks.map((task, tIndex) => (
                                   <li key={tIndex}>
@@ -595,7 +598,7 @@ function TLAddProject() {
                               <Typography variant="caption" ml={1}>
                                 No tasks
                               </Typography>
-                            )}
+                            )} */}
                           </Box>
                         ))}
                       </Box>

@@ -6,6 +6,8 @@ import Icon from "@mui/material/Icon";
 import MDBox from "components/MDBox";
 import Sidenav from "examples/Sidenav";
 import Configurator from "examples/Configurator";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 // Custom Sidebars
 import HrSidebar from "layouts/dashboard/hr/sidebar/HrSidebar";
@@ -139,8 +141,7 @@ export default function App() {
       <EmployeeSidebar />
     ) : userRole === "admin" ? (
       <AdminSidebar />
-    )
-     : userRole === "tl" ? (
+    ) : userRole === "tl" ? (
       <TlSidebar />
     ) : userRole === "hr" ? (
       <HrSidebar />
@@ -160,11 +161,25 @@ export default function App() {
     <CacheProvider value={rtlCache}>
       <ThemeProvider theme={themeSelection}>
         <CssBaseline />
-       {!pathname.startsWith("/authentication") && pathname !== "/reset-password" && currentLayout === "dashboard" && SidebarComponent}
-
+        {!pathname.startsWith("/authentication") &&
+          pathname !== "/reset-password" &&
+          currentLayout === "dashboard" &&
+          SidebarComponent}
 
         <Configurator />
         {configsButton}
+        <ToastContainer
+          position="top-right"
+          autoClose={3000}
+          hideProgressBar={false}
+          newestOnTop
+          closeOnClick
+          rtl={false}
+          pauseOnFocusLoss
+          draggable
+          pauseOnHover
+          theme="light"
+        />
         <Routes>
           {getRoutes(routes)}
           {userRole === "ceo" && getRoutes(CEORoutes)}
@@ -179,7 +194,10 @@ export default function App() {
   ) : (
     <ThemeProvider theme={themeSelection}>
       <CssBaseline />
-    {!pathname.startsWith("/authentication") && pathname !== "/reset-password" && currentLayout === "dashboard" && SidebarComponent}
+      {!pathname.startsWith("/authentication") &&
+        pathname !== "/reset-password" &&
+        currentLayout === "dashboard" &&
+        SidebarComponent}
 
       <Configurator />
       {configsButton}
@@ -188,7 +206,7 @@ export default function App() {
         {userRole === "ceo" && getRoutes(CEORoutes)}
         <Route path="/employee/:id" element={<EmployeeDetail />} />
         <Route path="/authentication/forgot-password" element={<ForgotPassword />} />
-          <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/" element={<Navigate to="/authentication/sign-in" />} />
         <Route path="*" element={<Navigate to="/authentication/sign-in" />} />
       </Routes>
