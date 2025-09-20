@@ -19,6 +19,7 @@ const EmployeeDetails = () => {
   const [overtimeHours, setOvertimeHours] = useState("");
   const [employee, setEmployee] = useState({});
   const [timecardData, setTimecardData] = useState([]);
+  const [projects, setProjects] = useState([]);
 
   const padTime = (t) => (t && t.match(/^\d{2}:\d{2}$/) ? t + ":00" : t || "00:00:00");
 
@@ -31,10 +32,12 @@ const EmployeeDetails = () => {
     const overtime = parseFloat(overtimeHours) || 0;
     const hourBlocks = [];
     for (let hour = 10; hour <= 18; hour++) {
+      if (hour === 13) continue; // skip lunch break
       const details = dayData[hour] || {};
       hourBlocks.push({
         hour,
         projectType: details.type || "",
+        projectCategory: details.category || "",
         projectName: details.name || "",
         projectPhase: details.phase || "",
         projectTask: details.task || "",
@@ -79,6 +82,17 @@ useEffect(() => {
     })
     .catch((err) => console.error("Fetch error (CEO):", err));
 }, []);
+useEffect(() => {
+  fetch("http://localhost:3001/getProjects")
+    .then((res) => res.json())
+    .then((data) => {
+      if (Array.isArray(data)) {
+        setProjects(data);
+      }
+    })
+    .catch((err) => console.error("Error fetching projects:", err));
+}, []);
+
  // empty deps = fetch once on mount
 
   // Fetch backend data (optional, for future use)
@@ -190,6 +204,7 @@ useEffect(() => {
         parsed.forEach((block) => {
           mapped[block.hour] = {
             type: block.projectType || "",
+            category: block.projectCategory || "",
             name: block.projectName || "",
             phase: block.projectPhase || "",
             task: block.projectTask || "",
@@ -218,7 +233,8 @@ useEffect(() => {
   const daysInMonth = getAllDatesInMonth(selectedYear, selectedMonth);
 
   const phases = ["Design", "Development", "Testing", "Deployment"];
-  const tasks = ["UI Fixes", "API Integration", "Bug Fixes", "Documentation"];
+  // const tasks = ["UI Fixes", "API Integration", "Bug Fixes", "Documentation"];
+  const tasks = ["Internal Meeting", "Customer Meeting","General"];;
 
   const formatHour = (hour) => {
     if (hour === 12) return "12 PM";
@@ -255,6 +271,7 @@ useEffect(() => {
         parsed.forEach((block) => {
           mapped[block.hour] = {
             type: block.projectType || "",
+            category: block.projectCategory || "",
             name: block.projectName || "",
             phase: block.projectPhase || "",
             task: block.projectTask || "",
@@ -343,7 +360,7 @@ useEffect(() => {
         const hourBlocks = JSON.parse(row.hourBlocks || "[]");
         worked = hourBlocks.filter(
           (block) =>
-            block.projectType || block.projectName || block.projectPhase || block.projectTask
+            block.projectType || block.projectCategory || block.projectName || block.projectPhase || block.projectTask
         ).length;
       } catch (err) {
         console.error("Error parsing hourBlocks:", err);
@@ -368,13 +385,13 @@ useEffect(() => {
         <>
           <div className={`employee-detail-container ${showPopupForm ? "blur" : ""}`}>
             <div className="header">
-              <Link to="/" className="back-link">
+              {/* <Link to="/" className="back-link">
                 ← Back
-              </Link>
+              </Link> */}
               <h1>Time & Attendance</h1>
             </div>
             <div className="profile-section">
-              <img src="https://via.placeholder.com/60" alt="Employee" className="profile-pic" />
+              {/* <img src="https://via.placeholder.com/60" alt="Employee" className="profile-pic" /> */}
               <div className="profile-info">
                 <h2>{employee?.fullName || "No name found"}</h2>
                 <p className="role">{employee?.role || "No role found"}</p>
@@ -386,7 +403,7 @@ useEffect(() => {
                 <p>{holiday} Holiday</p>
               </div>
             </div>
-            <div className="progress-section">
+            {/* <div className="progress-section">
               <p className="progress-text">Hour breakdown: 264 hrs</p>
               <div className="progress-bar">
                 <div className="approved" style={{ width: "70%" }}></div>
@@ -398,7 +415,7 @@ useEffect(() => {
                 <span className="legend red">{overtime} hrs Overtime</span>
                 <span className="legend orange">{holiday} Holidays</span>
               </div>
-            </div>
+            </div> */}
             <div className="tabs">
               <button
                 className={`tab ${activeTab === "timecard" ? "active" : ""}`}
@@ -467,8 +484,9 @@ useEffect(() => {
                           <td>
                             {JSON.parse(row.hourBlocks || "[]").map((block, idx) => (
                               <div key={idx}>
-                                Hour: {block.hour},Project Type: {block.projectType || "-"},Project
-                                Name: {block.projectName || "-"},Project Phase:{" "}
+                                Hour: {block.hour},Project Type: {block.projectType || "-"},
+                                Project Category: {block.projectCategory || "-"},
+                                Project Name: {block.projectName || "-"},Project Phase:{" "}
                                 {block.projectPhase || "-"}, Project Task:{" "}
                                 {block.projectTask || "-"}
                               </div>
@@ -517,6 +535,7 @@ useEffect(() => {
                         const isFilled =
                           block &&
                           (block.projectType ||
+                            block.projectCategory ||
                             block.projectName ||
                             block.projectPhase ||
                             block.projectTask);
@@ -615,6 +634,7 @@ useEffect(() => {
                   </div>
                   {[...Array(9)].map((_, i) => {
                     const hour = 10 + i;
+                    if (hour === 13) return null;
                     const hourData = hourlyDetails[selectedDate]?.[hour] || {};
                     return (
                       <div key={i} className="hour-block">
@@ -633,15 +653,23 @@ useEffect(() => {
                             <option>Internal</option>
                           </select>
                         </div>
-                        <div className="field">
-                          <label>Project Name</label>
-                          <input
-                            type="text"
-                            value={hourData.name || ""}
-                            onChange={(e) => updateHourDetail(hour, "name", e.target.value)}
-                            disabled={formMode === "Leave"}
-                          />
-                        </div>
+             <div className="field">
+  <label>Project Name</label>
+  <select
+    value={hourData.name || ""}
+    onChange={(e) => updateHourDetail(hour, "name", e.target.value)}
+    disabled={formMode === "Leave"}
+  >
+    <option value="">Select Project</option>
+    {projects.map((project) => (
+      <option key={project.id} value={project.projectName}>
+        {project.projectName}
+      </option>
+    ))}
+  </select>
+</div>
+
+
                         <div className="field">
                           <label>Project Phase</label>
                           <select

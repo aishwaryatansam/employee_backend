@@ -30,7 +30,7 @@ const AdminSidebar = () => {
       sx={{
         width: "240px",
         height: "calc(100vh - 30px)",
-        backgroundColor: "#1e1e2f",
+        backgroundColor: "#00569A",
         position: "fixed",
         top: "15px",
         left: "15px",
@@ -57,12 +57,13 @@ const AdminSidebar = () => {
         {/* Navigation Links */}
         <ul style={{ listStyle: "none", paddingLeft: 0, margin: 0 }}>
           {[
-            { to: "/dashboard/admin", icon: "dashboard", label: "Dashboard" },
+            // { to: "/dashboard/admin", icon: "dashboard", label: "Dashboard" },
             { to: "/members", icon: "group", label: "Employees" },
             { to: "/add-member", icon: "person_add", label: "Add Member" },
-            { to: "/profile", icon: "account_circle", label: "Profile" },
-            { to: "/notifications", icon: "notifications", label: "Notifications" },
-            { to: "/authentication/sign-in", icon: "login", label: "Sign In" },
+            { to: "/projectStatus", icon: "projects", label: "Project status" },
+            // { to: "/profile", icon: "account_circle", label: "Profile" },
+            // { to: "/notifications", icon: "notifications", label: "Notifications" },
+            // { to: "/authentication/sign-in", icon: "login", label: "Sign In" },
           ].map(({ to, icon, label }) => (
             <li key={label}>
               <NavLink

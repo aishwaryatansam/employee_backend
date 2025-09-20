@@ -4,6 +4,7 @@ import Icon from "@mui/material/Icon";
 import MDBox from "components/MDBox";
 import MDTypography from "components/MDTypography";
 import Button from "@mui/material/Button"; // for logout button
+import logo from "assets/images/logos/tansamlogo.png";
 
 // Base style for sidebar links
 const baseLinkStyle = {
@@ -30,7 +31,7 @@ const EmployeeSidebar = () => {
       sx={{
         width: "240px",
         height: "calc(100vh - 30px)",
-        backgroundColor: "#1e1e2f",
+        backgroundColor: "#00569A",
         position: "fixed",
         top: "15px",
         left: "15px",
@@ -48,18 +49,23 @@ const EmployeeSidebar = () => {
       {/* Top content */}
       <MDBox>
         {/* Logo / Brand */}
-        <MDBox px={3} mb={2}>
+         <MDBox px={3} mb={2} display="flex" alignItems="center" gap={1}>
           <MDTypography variant="h6" color="white" fontWeight="bold">
             Timesheet
           </MDTypography>
+          <img
+            src={logo} // ✅ imported logo used here
+            alt="Logo"
+            style={{ width: "30px", height: "30px", objectFit: "contain" }}
+          />
         </MDBox>
 
         {/* Navigation Links */}
         <ul style={{ listStyle: "none", paddingLeft: 0, margin: 0 }}>
           {[
-            { to: "/dashboard", icon: "dashboard", label: "Dashboard" },
+            // { to: "/dashboard", icon: "dashboard", label: "Dashboard" },
             { to: "/employee-time", icon: "access_time", label: "Timesheet" },
-            { to: "/authentication/sign-in", icon: "login", label: "Sign In" },
+            // { to: "/authentication/sign-in", icon: "login", label: "Sign In" },
           ].map(({ to, icon, label }) => (
             <li key={label}>
               <NavLink

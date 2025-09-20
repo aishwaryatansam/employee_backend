@@ -16,7 +16,6 @@ import { useNavigate } from "react-router-dom";
 import bgImage from "assets/images/background.png";
 import logo from "assets/images/logos/tansamlogo.png";
 
-
 function Basic() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -31,47 +30,53 @@ function Basic() {
       .catch((err) => console.error("Failed to fetch members:", err));
   }, []);
 
-const handleLogin = async (e) => {
-  e.preventDefault();
+  const handleLogin = async (e) => {
+    e.preventDefault();
 
-  try {
-    const res = await fetch("http://localhost:3001/login", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ email, password }),
-    });
+    try {
+      const res = await fetch("http://localhost:3001/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+      });
 
-    if (!res.ok) {
-      const errorData = await res.json();
-      alert(errorData.error || "Login failed");
-      return;
+      if (!res.ok) {
+        const errorData = await res.json();
+        alert(errorData.error || "Login failed");
+        return;
+      }
+
+      const data = await res.json();
+
+      // ✅ Store login info
+      localStorage.setItem("userEmail", data.email);
+      localStorage.setItem("userRole", data.role);
+
+      // ✅ Redirect based on role
+      // if (data.role === "admin") {
+      //   navigate("/dashboard/admin");
+      // }
+      if (data.role === "admin") {
+        navigate("/members");
+      }
+      // else if (data.role === "employee") {
+      //   navigate("/dashboard");
+      // }
+      else if (data.role === "employee") {
+        navigate("/employee-time");
+      } else if (data.role === "tl") {
+        navigate("/tldashboard");
+      } else if (data.role === "hr") {
+        navigate("/hr/dashboard");
+      } else if (data.role === "ceo") {
+        navigate("/ceo-dashboard");
+      }
+    } catch (err) {
+      alert("Login request failed: " + err.message);
     }
-
-    const data = await res.json();
-
-    // ✅ Store login info
-    localStorage.setItem("userEmail", data.email);
-    localStorage.setItem("userRole", data.role);
-
-    // ✅ Redirect based on role
-    if (data.role === "admin") {
-      navigate("/dashboard/admin");
-    } else if (data.role === "employee") {
-      navigate("/dashboard");
-    } else if (data.role === "tl") {
-      navigate("/tldashboard");
-    } else if (data.role === "hr") {
-      navigate("/hr/dashboard");
-    } else if (data.role === "ceo") {
-      navigate("/ceo-dashboard");
-    }
-  } catch (err) {
-    alert("Login request failed: " + err.message);
-  }
-};
-
+  };
 
   return (
     <BasicLayout image={bgImage}>
@@ -127,14 +132,14 @@ const handleLogin = async (e) => {
                 Login
               </MDButton>
             </MDBox>
- <MDTypography
-  variant="button"
-  color="info"
-  onClick={() => navigate("/authentication/forgot-password")}
-  style={{ cursor: "pointer", marginTop: "10px", display: "block" }}
->
-  Forgot Password?
-</MDTypography>
+            <MDTypography
+              variant="button"
+              color="info"
+              onClick={() => navigate("/authentication/forgot-password")}
+              style={{ cursor: "pointer", marginTop: "10px", display: "block" }}
+            >
+              Forgot Password?
+            </MDTypography>
           </form>
         </MDBox>
       </Card>

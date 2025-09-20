@@ -6,6 +6,9 @@ import SignIn from "layouts/authentication/sign-in";
 import Notifications from "layouts/notifications";
 import Profile from "layouts/profile";
 
+import ProjectStatus from "layouts/dashboard/admin/pages/ProjectStatus";
+import Projects from "layouts/dashboard/admin/pages/TLAddProject";
+
 const adminRoutes = [
   {
     type: "collapse",
@@ -31,6 +34,7 @@ const adminRoutes = [
     route: "/add-member",
     component: <AddMember />,
   },
+  
   {
     type: "collapse",
     name: "Profile",
@@ -38,6 +42,14 @@ const adminRoutes = [
     icon: <Icon fontSize="small">person</Icon>,
     route: "/profile",
     component: <Profile />,
+  },
+    {
+    type: "collapse",
+    name: "project",
+    key: "project",
+    icon: <Icon fontSize="small">person</Icon>,
+    route: "/projectStatus",
+    component: <ProjectStatus />,
   },
   {
     type: "collapse",

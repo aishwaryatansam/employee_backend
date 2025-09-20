@@ -139,7 +139,8 @@ export default function App() {
       <EmployeeSidebar />
     ) : userRole === "admin" ? (
       <AdminSidebar />
-    ) : userRole === "tl" ? (
+    )
+     : userRole === "tl" ? (
       <TlSidebar />
     ) : userRole === "hr" ? (
       <HrSidebar />
