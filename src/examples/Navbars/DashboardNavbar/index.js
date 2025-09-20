@@ -135,7 +135,7 @@ function DashboardNavbar({ absolute, light, isMini }) {
         </MDBox>
         {isMini ? null : (
           <MDBox sx={(theme) => navbarRow(theme, { isMini })}>
-            <MDBox pr={1}>
+            {/* <MDBox pr={1}>
               <MDInput label="Search here" />
             </MDBox>
             <MDBox color={light ? "white" : "inherit"}>
@@ -177,7 +177,7 @@ function DashboardNavbar({ absolute, light, isMini }) {
                 <Icon sx={iconsStyle}>notifications</Icon>
               </IconButton>
               {renderMenu()}
-            </MDBox>
+            </MDBox> */}
           </MDBox>
         )}
       </Toolbar>

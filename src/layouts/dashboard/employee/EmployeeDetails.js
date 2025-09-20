@@ -36,6 +36,7 @@ const EmployeeDetails = () => {
       hourBlocks.push({
         hour,
         projectType: details.type || "",
+        projectCategory: details.category || "",
         projectName: details.name || "",
         projectPhase: details.phase || "",
         projectTask: details.task || "",
@@ -202,6 +203,7 @@ useEffect(() => {
         parsed.forEach((block) => {
           mapped[block.hour] = {
             type: block.projectType || "",
+            category: block.projectCategory || "",
             name: block.projectName || "",
             phase: block.projectPhase || "",
             task: block.projectTask || "",
@@ -230,7 +232,8 @@ useEffect(() => {
   const daysInMonth = getAllDatesInMonth(selectedYear, selectedMonth);
 
   const phases = ["Design", "Development", "Testing", "Deployment"];
-  const tasks = ["UI Fixes", "API Integration", "Bug Fixes", "Documentation"];
+  // const tasks = ["UI Fixes", "API Integration", "Bug Fixes", "Documentation"];
+  const tasks = ["Internal Meeting", "Customer Meeting","General"];;
 
   const formatHour = (hour) => {
     if (hour === 12) return "12 PM";
@@ -267,6 +270,7 @@ useEffect(() => {
         parsed.forEach((block) => {
           mapped[block.hour] = {
             type: block.projectType || "",
+            category: block.projectCategory || "",
             name: block.projectName || "",
             phase: block.projectPhase || "",
             task: block.projectTask || "",
@@ -355,7 +359,7 @@ useEffect(() => {
         const hourBlocks = JSON.parse(row.hourBlocks || "[]");
         worked = hourBlocks.filter(
           (block) =>
-            block.projectType || block.projectName || block.projectPhase || block.projectTask
+            block.projectType || block.projectCategory || block.projectName || block.projectPhase || block.projectTask
         ).length;
       } catch (err) {
         console.error("Error parsing hourBlocks:", err);
@@ -479,8 +483,9 @@ useEffect(() => {
                           <td>
                             {JSON.parse(row.hourBlocks || "[]").map((block, idx) => (
                               <div key={idx}>
-                                Hour: {block.hour},Project Type: {block.projectType || "-"},Project
-                                Name: {block.projectName || "-"},Project Phase:{" "}
+                                Hour: {block.hour},Project Type: {block.projectType || "-"},
+                                Project Category: {block.projectCategory || "-"},
+                                Project Name: {block.projectName || "-"},Project Phase:{" "}
                                 {block.projectPhase || "-"}, Project Task:{" "}
                                 {block.projectTask || "-"}
                               </div>
@@ -529,6 +534,7 @@ useEffect(() => {
                         const isFilled =
                           block &&
                           (block.projectType ||
+                            block.projectCategory ||
                             block.projectName ||
                             block.projectPhase ||
                             block.projectTask);

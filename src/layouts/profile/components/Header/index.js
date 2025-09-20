@@ -39,6 +39,25 @@ import burceMars from "assets/images/bruce-mars.jpg";
 import backgroundImage from "assets/images/bg-profile.jpeg";
 
 function Header({ children }) {
+  const [profile, setProfile] = useState(null);
+
+  useEffect(() => {
+    // ✅ Fetch members from API
+    fetch("http://localhost:3001/api/members") // change port if needed
+      .then((res) => res.json())
+      .then((data) => {
+        // Example: pick currently logged-in user
+        // If you store the logged-in user email/role in localStorage or context, filter accordingly
+        const loggedInEmail = localStorage.getItem("userEmail"); 
+        const user = data.find((member) => member.email === loggedInEmail);
+
+        if (user) {
+          setProfile(user);
+        }
+      })
+      .catch((err) => console.error("Error fetching members:", err));
+  }, []);
+
   // const [tabsOrientation, setTabsOrientation] = useState("horizontal");
   // const [tabValue, setTabValue] = useState(0);
 
@@ -94,15 +113,20 @@ function Header({ children }) {
       >
         <Grid container spacing={3} alignItems="center">
           <Grid item>
-            <MDAvatar src={burceMars} alt="profile-image" size="xl" shadow="sm" />
+            <MDAvatar 
+              src={profile?.imagePath ? `http://localhost:3001${profile.imagePath}` : "/default-avatar.png"}
+              alt="profile-image"
+              size="xl"
+              shadow="sm"
+            />
           </Grid>
           <Grid item>
             <MDBox height="100%" mt={0.5} lineHeight={1}>
               <MDTypography variant="h5" fontWeight="medium">
-                Richard Davis
+                 {profile?.fullName || "Guest User"}
               </MDTypography>
               <MDTypography variant="button" color="text" fontWeight="regular">
-                CEO / Co-Founder
+                 {profile?.role || "No Role"}
               </MDTypography>
             </MDBox>
           </Grid>
