@@ -4,7 +4,7 @@ import Icon from "@mui/material/Icon";
 import MDBox from "components/MDBox";
 import MDTypography from "components/MDTypography";
 import Button from "@mui/material/Button";
-
+import logo from "assets/images/logos/tansamlogo.png";
 // Base style for sidebar links
 const baseLinkStyle = {
   display: "flex",
@@ -48,12 +48,17 @@ const AdminSidebar = () => {
       {/* Top content */}
       <MDBox>
         {/* Logo / Brand */}
-        <MDBox px={3} mb={2}>
+    <MDBox px={3} mb={2} display="flex" alignItems="center" gap={1}>
           <MDTypography variant="h6" color="white" fontWeight="bold">
             Timesheet
           </MDTypography>
+          <img
+            src={logo} // ✅ imported logo used here
+            alt="Logo"
+            style={{ width: "30px", height: "30px", objectFit: "contain" }}
+          />
         </MDBox>
-
+       
         {/* Navigation Links */}
         <ul style={{ listStyle: "none", paddingLeft: 0, margin: 0 }}>
           {[
