@@ -31,7 +31,7 @@ const EmployeeDetails = () => {
     const checkOut = padTime(checkInOut.checkOut);
     const overtime = parseFloat(overtimeHours) || 0;
     const hourBlocks = [];
-    for (let hour = 10; hour <= 18; hour++) {
+    for (let hour = 10; hour < 18; hour++) {
       if (hour === 13) continue; // skip lunch break
       const details = dayData[hour] || {};
       hourBlocks.push({
@@ -337,7 +337,7 @@ const EmployeeDetails = () => {
   // Calculate work hours for a day (all filled hour blocks except break hour 13)
   const getWorkHours = (details = {}) => {
     let count = 0;
-    for (let hour = 10; hour <= 18; hour++) {
+    for (let hour = 10; hour < 18; hour++) {
       if (hour === 13) continue; // lunch break
       const hd = details[hour];
       if (hd && hd.type) count++;
@@ -648,7 +648,7 @@ const EmployeeDetails = () => {
                   </div>
                   {[...Array(9)].map((_, i) => {
                     const hour = 10 + i;
-                    if (hour === 13) return null;
+                 
                     const hourData = hourlyDetails[selectedDate]?.[hour] || {};
                     return (
                       <div key={i} className="hour-block">
