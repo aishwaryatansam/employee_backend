@@ -22,6 +22,7 @@ import MDBox from "components/MDBox";
 import MDButton from "components/MDButton";
 import DataTable from "examples/Tables/DataTable";
 import { useTheme } from "@mui/material/styles";
+
 function TLAddProject() {
   const [projectName, setProjectName] = useState("");
   const [description, setDescription] = useState("");
@@ -44,7 +45,7 @@ function TLAddProject() {
   const [isEditing, setIsEditing] = useState(false);
   const [editingIndex, setEditingIndex] = useState(null);
   const theme = useTheme();
-  // Instead of reading from localStorage on mount:
+
   useEffect(() => {
     fetch("http://localhost:3001/getProjects")
       .then((res) => res.json())
@@ -59,8 +60,6 @@ function TLAddProject() {
       return;
     }
 
-    console.log("Editing project:", project);
-
     setProjectName(project.projectName || "");
     setProjectType(project.projectType || "Billable");
     setDescription(project.description || "");
@@ -69,7 +68,6 @@ function TLAddProject() {
     setCompletedDate(project.completedDate ? project.completedDate.split("T")[0] : "");
     setStatus(project.status || "Ongoing");
     setPhases(project.phases || [{ phaseName: "", tasks: [{ taskName: "", assignedTo: "" }] }]);
-
     setIsEditing(true);
     setEditingIndex(index);
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -77,7 +75,7 @@ function TLAddProject() {
 
   const handleDeleteProject = async (index) => {
     const project = projectsList[index];
-    const projectId = project.id || project.project_id; // use whichever exists
+    const projectId = project.id || project.project_id;
 
     if (!projectId) {
       toast.error("Project ID not found!");
@@ -99,13 +97,13 @@ function TLAddProject() {
       const data = await response.json();
       toast.success(data.message);
 
-      // Remove from frontend list
       const updatedProjects = projectsList.filter((_, i) => i !== index);
       setProjectsList(updatedProjects);
     } catch (err) {
       toast.error("❌ " + err.message);
     }
   };
+
   const handleStatusChange = (value) => {
     setStatus(value);
     if (value === "Completed") {
@@ -115,6 +113,7 @@ function TLAddProject() {
       setCompletedDate("");
     }
   };
+
   const mColumns = [
     { Header: "Project Name", accessor: "projectName" },
     { Header: "Project Type", accessor: "projectType" },
@@ -122,6 +121,7 @@ function TLAddProject() {
     { Header: "Task", accessor: "task" },
     { Header: "Assigned Member", accessor: "assignedMember" },
   ];
+
   const mRows = projectData.flatMap((project) =>
     project.projectPhases.flatMap((phase) =>
       phase.phaseTasks.map((task) => ({
@@ -129,7 +129,7 @@ function TLAddProject() {
         projectType: project.projectType,
         phase: phase.phaseName,
         task: task.taskName,
-        assignedMember: task.assignedMember,
+        assignedMember: task.assignedTo,
       }))
     )
   );
@@ -142,10 +142,6 @@ function TLAddProject() {
     setProjectsList(storedProjects);
   }, []);
 
-  useEffect(() => {
-    const storedTeam = JSON.parse(localStorage.getItem("tl_team_members")) || [];
-    setTeamMembers(storedTeam);
-  }, []);
   const handleAddPhase = () => {
     setPhases([...phases, { phaseName: "", tasks: [{ taskName: "", assignedTo: "" }] }]);
   };
@@ -155,16 +151,19 @@ function TLAddProject() {
     updatedPhases.splice(index, 1);
     setPhases(updatedPhases);
   };
-  const handlePhaseNameChange = (index, value) => {
-    const updatedPhases = [...phases];
-    updatedPhases[index].phaseName = value;
-    setPhases(updatedPhases);
+
+  const handlePhaseChange = (index, value) => {
+    const updated = [...phases];
+    updated[index].phaseName = value;
+    setPhases(updated);
   };
+
   const handleTaskChange = (phaseIndex, taskIndex, key, value) => {
     const updatedPhases = [...phases];
     updatedPhases[phaseIndex].tasks[taskIndex][key] = value;
     setPhases(updatedPhases);
   };
+
   const handleAddTask = (phaseIndex) => {
     const updatedPhases = [...phases];
     updatedPhases[phaseIndex].tasks.push({ taskName: "", assignedTo: "" });
@@ -177,11 +176,6 @@ function TLAddProject() {
     setPhases(updatedPhases);
   };
 
-  const handlePhaseChange = (index, value) => {
-    const updated = [...phases];
-    updated[index].phaseName = value;
-    setPhases(updated);
-  };
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -199,6 +193,7 @@ function TLAddProject() {
       completedDate: completedDate || null,
       status,
       phases,
+      assignedMembers,
     };
 
     try {
@@ -210,14 +205,13 @@ function TLAddProject() {
           toast.error("❌ Cannot update: Project ID missing");
           return;
         }
-        // Update
+
         response = await fetch(`http://localhost:3001/updateProject/${projectId}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(newProject),
         });
       } else {
-        // Insert
         response = await fetch("http://localhost:3001/addProjects", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -234,16 +228,13 @@ function TLAddProject() {
       toast.success(data.message);
 
       if (isEditing) {
-        // Update locally
         const updatedProjects = [...projectsList];
         updatedProjects[editingIndex] = { ...newProject, id: projectsList[editingIndex].id };
         setProjectsList(updatedProjects);
       } else {
-        // Insert locally
         setProjectsList((prev) => [...prev, { ...newProject, id: data.projectId }]);
       }
 
-      // Reset form
       setProjectName("");
       setDescription("");
       setStatus("Ongoing");
@@ -252,6 +243,7 @@ function TLAddProject() {
       setCompletedDate("");
       setProjectType("Billable");
       setPhases([{ phaseName: "", tasks: [{ taskName: "", assignedTo: "" }] }]);
+      setAssignedMembers("");
       setIsEditing(false);
       setEditingIndex(null);
     } catch (err) {
@@ -264,22 +256,6 @@ function TLAddProject() {
       <MDBox pt={4} pb={3}>
         <Grid container spacing={2} alignItems="center" mb={1}>
           <Grid item xs={12}>
-            {" "}
-            {/*<Grid item xs={12}>
-          <Card>
-              
-              <MDBox pt={3}>
-           <DataTable
- table={{ columns: mColumns, rows: mRows }} 
-                  isSorted={false}
-                  entriesPerPage={false}
-                  showTotalEntries={false}
-                  noEndBorder
-                /> 
-              </MDBox>
-            </Card>
-          </Grid>*/}
-            <br></br>{" "}
             <Card sx={{ p: 4, borderRadius: 3, boxShadow: 4 }}>
               <MDBox
                 mx={2}
@@ -297,7 +273,6 @@ function TLAddProject() {
                 </MDTypography>
               </MDBox>
 
-              <br></br>
               <Box component="form" onSubmit={handleSubmit}>
                 <Grid container spacing={2}>
                   <Grid item xs={12} sm={6}>
@@ -322,8 +297,8 @@ function TLAddProject() {
                       </Select>
                     </FormControl>
                   </Grid>
+
                   <Box mt={4} gap={12}>
-                    {" "}
                     <Typography variant="h6" fontWeight="bold" mb={2}>
                       Project Phases
                     </Typography>
@@ -332,12 +307,8 @@ function TLAddProject() {
                         key={phaseIndex}
                         mb={3}
                         p={2}
-                        sx={{
-                          border: `1px solid ${theme.palette.divider}`,
-                          borderRadius: 2,
-                        }}
+                        sx={{ border: `1px solid ${theme.palette.divider}`, borderRadius: 2 }}
                       >
-                        {" "}
                         <TextField
                           fullWidth
                           label={`Phase ${phaseIndex + 1} Name`}
@@ -363,27 +334,19 @@ function TLAddProject() {
                               />
                             </Grid>
                             <Grid item xs={6}>
-                              <FormControl fullWidth>
-                                <InputLabel>Assign To</InputLabel>
-                                <TextField
-                                  value={task.assignedTo}
-                                  onChange={(e) =>
-                                    handleTaskChange(
-                                      phaseIndex,
-                                      taskIndex,
-                                      "assignedTo",
-                                      e.target.value
-                                    )
-                                  }
-                                  input={<OutlinedInput label="Assign To" />}
-                                >
-                                  {teamMembers.map((member, idx) => (
-                                    <MenuItem key={idx} value={member.name}>
-                                      {member.name}
-                                    </MenuItem>
-                                  ))}
-                                </TextField>
-                              </FormControl>
+                              <TextField
+                                fullWidth
+                                label="Assign To"
+                                value={task.assignedTo}
+                                onChange={(e) =>
+                                  handleTaskChange(
+                                    phaseIndex,
+                                    taskIndex,
+                                    "assignedTo",
+                                    e.target.value
+                                  )
+                                }
+                              />
                             </Grid>
                           </Grid>
                         ))}
@@ -397,11 +360,11 @@ function TLAddProject() {
                             Add Task
                           </MDButton>
                           <Button
-                            onClick={() => handleRemoveTask(phases.length - 1)} // remove last
+                            onClick={() => handleRemoveTask(phaseIndex, phase.tasks.length - 1)}
                             variant="contained"
                             size="small"
                             color="error"
-                            disabled={phases.length === 0}
+                            disabled={phase.tasks.length === 0}
                           >
                             Remove Task
                           </Button>
@@ -409,16 +372,11 @@ function TLAddProject() {
                       </Box>
                     ))}
                     <Box mt={4} display="flex" gap={2}>
-                      <MDButton
-                        onClick={handleAddPhase}
-                        variant="gradient"
-                        color="info"
-                        size="small"
-                      >
+                      <MDButton onClick={handleAddPhase} variant="gradient" color="info" size="small">
                         Add Phase
                       </MDButton>
                       <Button
-                        onClick={() => handleRemovePhase(phases.length - 1)} // remove last
+                        onClick={() => handleRemovePhase(phases.length - 1)}
                         variant="contained"
                         size="small"
                         color="error"
@@ -489,10 +447,9 @@ function TLAddProject() {
 
                   <Grid item xs={12} sm={6}>
                     <FormControl fullWidth>
-                      <InputLabel>Assign Members</InputLabel>
                       <TextField
                         label="Assign Members"
-                        value={assignedMembers} // new state variable
+                        value={assignedMembers}
                         onChange={(e) => setAssignedMembers(e.target.value)}
                         placeholder="Enter member names separated by commas"
                       />
@@ -501,7 +458,7 @@ function TLAddProject() {
                 </Grid>
 
                 <Box mt={4} display="flex" gap={2}>
-                  <MDButton type="submit" variant="gradient" color="info" onSubmit={handleSubmit}>
+                  <MDButton type="submit" variant="gradient" color="info">
                     {isEditing ? "Update Project" : "Save Project"}
                   </MDButton>
 
@@ -518,6 +475,8 @@ function TLAddProject() {
                       setCompletedDate("");
                       setSelectedMembers([]);
                       setProjectType("Billable");
+                      setPhases([{ phaseName: "", tasks: [{ taskName: "", assignedTo: "" }] }]);
+                      setAssignedMembers("");
                     }}
                   >
                     Reset
@@ -527,6 +486,7 @@ function TLAddProject() {
             </Card>
           </Grid>
         </Grid>
+
         <Box mt={5}>
           <Typography variant="h6" fontWeight="bold" mb={2}>
             Existing Projects
@@ -601,20 +561,19 @@ function TLAddProject() {
                       </Box>
                     )}
                     <Box mt={2} display="flex" gap={1}>
-                      <MDButton
-                        variant="gradient"
-                        color="info"
-                        size="small"
+                      <Button
                         onClick={() => handleEditProject(index)}
-                        disabled={project.status === "Completed"}
+                        variant="contained"
+                        size="small"
+                        color="info"
                       >
                         Edit
-                      </MDButton>
+                      </Button>
                       <Button
-                        variant="contained"
-                        color="error"
-                        size="small"
                         onClick={() => handleDeleteProject(index)}
+                        variant="contained"
+                        size="small"
+                        color="error"
                       >
                         Delete
                       </Button>
