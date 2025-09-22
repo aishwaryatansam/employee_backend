@@ -35,7 +35,7 @@ const EmployeeDetails = () => {
       if (hour === 13) continue; // skip lunch break
       const details = dayData[hour] || {};
       hourBlocks.push({
-        hour: formatHourRange(hour),
+        hour,
         projectType: details.type || "",
         projectCategory: details.category || "",
         projectName: details.name || "",
