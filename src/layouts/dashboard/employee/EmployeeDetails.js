@@ -653,6 +653,20 @@ useEffect(() => {
                             <option>Internal</option>
                           </select>
                         </div>
+                            <div className="field">
+                          <label>Project Category</label>
+                          <select
+                            value={hourData.category || ""}
+                            onChange={(e) => updateHourDetail(hour, "category", e.target.value)}
+                            disabled={formMode === "Leave"}
+                          >
+                            <option value="">Select Category</option>
+                            <option>Software</option>
+                            <option>Engineering</option>
+                            <option>Training</option>
+                          </select>
+                        </div>
+
              <div className="field">
   <label>Project Name</label>
   <select
