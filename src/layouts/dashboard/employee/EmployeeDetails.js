@@ -271,24 +271,26 @@ const EmployeeDetails = () => {
       setOvertimeHours(entry.overtime || 0);
       setFormMode(entry.status || "Work");
 
-      try {
-        const parsed = JSON.parse(entry.hourBlocks || "[]");
-        const mapped = {};
-        parsed.forEach((block) => {
-          mapped[block.hour] = {
-            type: block.projectType || "",
-            category: block.projectCategory || "",
-            name: block.projectName || "",
-            phase: block.projectPhase || "",
-            task: block.projectTask || "",
-          };
-        });
-        setHourlyDetails((prev) => ({ ...prev, [formatted]: mapped }));
-      } catch (err) {
-        console.error("Error parsing hourBlocks:", err);
-        setHourlyDetails((prev) => ({ ...prev, [formatted]: {} }));
-      }
-    } else {
+         try {
+      const parsed = JSON.parse(entry.hourBlocks || "[]");
+      const mapped = {};
+      parsed.forEach((block) => {
+        // Convert block.hour like "10 AM - 11 AM" to numeric start hour
+        const startHour = parseInt(block.hour.split(" ")[0], 10);
+        mapped[startHour] = {
+          type: block.projectType || "",
+          category: block.projectCategory || "",
+          name: block.projectName || "",
+          phase: block.projectPhase || "",
+          task: block.projectTask || "",
+        };
+      });
+      setHourlyDetails((prev) => ({ ...prev, [formatted]: mapped }));
+    } catch (err) {
+      console.error("Error parsing hourBlocks:", err);
+      setHourlyDetails((prev) => ({ ...prev, [formatted]: {} }));
+    }
+  } else {
       // No data yet for this date
       setCheckInOut({ checkIn: "", checkOut: "" });
       setOvertimeHours(0);
@@ -524,62 +526,64 @@ const EmployeeDetails = () => {
                 </div>
 
                 {daysInMonth.map((date, index) => {
-                  const formatted = formatDate(date);
+  const formatted = formatDate(date);
 
-                  const entry = timecardData.find(
-                    (d) => formatDate(d.date) === formatted // ✅ fixed
-                  );
+  const entry = timecardData.find(
+    (d) => formatDate(d.date) === formatted
+  );
 
-                  const hourBlocks = entry ? JSON.parse(entry.hourBlocks || "[]") : [];
+  const hourBlocks = entry ? JSON.parse(entry.hourBlocks || "[]") : [];
 
-                  return (
-                    <div className="timeline-row" key={index}>
-                      <div className="date-cell">{formatted}</div>
+  return (
+    <div className="timeline-row" key={index}>
+      <div className="date-cell">{formatted}</div>
 
-                      {[...Array(9)].map((_, hourIdx) => {
-                        const hour = 10 + hourIdx;
-                        const block = hourBlocks.find((b) => b.hour === hour);
+      {[...Array(9)].map((_, hourIdx) => {
+        const hour = 10 + hourIdx;
+       const block = hourBlocks.find(
+  (b) => b.hour === formatHourRange(hour) // "10 AM - 11 AM"
+);
 
-                        const status = entry?.status || "Work";
-                        const isLeave = status === "Leave";
-                        const isFilled =
-                          block &&
-                          (block.projectType ||
-                            block.projectCategory ||
-                            block.projectName ||
-                            block.projectPhase ||
-                            block.projectTask);
+        const status = entry?.status || "Work";
+        const isLeave = status === "Leave";
+        const isFilled =
+          block &&
+          (block.projectType ||
+            block.projectCategory ||
+            block.projectName ||
+            block.projectPhase ||
+            block.projectTask);
 
-                        let colorClass = "";
-                        if (hour === 13) colorClass = "break";
-                        else if (isLeave) colorClass = "leave";
-                        else if (isFilled) colorClass = "work";
+        let colorClass = "";
+        if (hour === 13) colorClass = "break";
+        else if (isLeave) colorClass = "leave";
+        else if (isFilled) colorClass = "work";
 
-                        return (
-                          <div
-                            key={hourIdx}
-                            className={`hour-cell ${colorClass}`}
-                            title={
-                              isLeave
-                                ? "Leave"
-                                : hour === 13
-                                ? "Lunch Break"
-                                : isFilled
-                                ? `${block.projectName || "-"} (${block.projectPhase || "-"})`
-                                : ""
-                            }
-                          />
-                        );
-                      })}
+        return (
+          <div
+            key={hourIdx}
+            className={`hour-cell ${colorClass}`}
+            title={
+              isLeave
+                ? "Leave"
+                : hour === 13
+                ? "Lunch Break"
+                : isFilled
+                ? `${block.projectName || "-"} (${block.projectPhase || "-"})`
+                : ""
+            }
+          />
+        );
+      })}
 
-                      <div className="approval-cell">
-                        <button className="icon-btn edit-btn" onClick={() => openEditPopup(date)}>
-                          ✎
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
+      <div className="approval-cell">
+        <button className="icon-btn edit-btn" onClick={() => openEditPopup(date)}>
+          ✎
+        </button>
+      </div>
+    </div>
+  );
+})}
 
                 <div className="legend-container">
                   <span className="legend-box work" /> Work
