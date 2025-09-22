@@ -72,28 +72,28 @@ const EmployeeDetails = () => {
     }
   };
 
-useEffect(() => {
-  fetch("http://localhost:3001/getHourDetailsByMonthForCeo")
-    .then((res) => res.json())
-    .then((data) => {
-      if (data.success && data.data) {
-        setTimecardData(data.data);
-      }
-    })
-    .catch((err) => console.error("Fetch error (CEO):", err));
-}, []);
-useEffect(() => {
-  fetch("http://localhost:3001/getProjects")
-    .then((res) => res.json())
-    .then((data) => {
-      if (Array.isArray(data)) {
-        setProjects(data);
-      }
-    })
-    .catch((err) => console.error("Error fetching projects:", err));
-}, []);
+  useEffect(() => {
+    fetch("http://localhost:3001/getHourDetailsByMonthForCeo")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && data.data) {
+          setTimecardData(data.data);
+        }
+      })
+      .catch((err) => console.error("Fetch error (CEO):", err));
+  }, []);
+  useEffect(() => {
+    fetch("http://localhost:3001/getProjects")
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data)) {
+          setProjects(data);
+        }
+      })
+      .catch((err) => console.error("Error fetching projects:", err));
+  }, []);
 
- // empty deps = fetch once on mount
+  // empty deps = fetch once on mount
 
   // Fetch backend data (optional, for future use)
 
@@ -234,7 +234,7 @@ useEffect(() => {
 
   const phases = ["Design", "Development", "Testing", "Deployment"];
   // const tasks = ["UI Fixes", "API Integration", "Bug Fixes", "Documentation"];
-  const tasks = ["Internal Meeting", "Customer Meeting","General"];;
+  const tasks = ["Internal Meeting", "Customer Meeting", "General"];
 
   const formatHour = (hour) => {
     if (hour === 12) return "12 PM";
@@ -360,7 +360,11 @@ useEffect(() => {
         const hourBlocks = JSON.parse(row.hourBlocks || "[]");
         worked = hourBlocks.filter(
           (block) =>
-            block.projectType || block.projectCategory || block.projectName || block.projectPhase || block.projectTask
+            block.projectType ||
+            block.projectCategory ||
+            block.projectName ||
+            block.projectPhase ||
+            block.projectTask
         ).length;
       } catch (err) {
         console.error("Error parsing hourBlocks:", err);
@@ -484,9 +488,9 @@ useEffect(() => {
                           <td>
                             {JSON.parse(row.hourBlocks || "[]").map((block, idx) => (
                               <div key={idx}>
-                                Hour: {block.hour},Project Type: {block.projectType || "-"},
-                                Project Category: {block.projectCategory || "-"},
-                                Project Name: {block.projectName || "-"},Project Phase:{" "}
+                                Hour: {block.hour},Project Type: {block.projectType || "-"}, Project
+                                Category: {block.projectCategory || "-"}, Project Name:{" "}
+                                {block.projectName || "-"},Project Phase:{" "}
                                 {block.projectPhase || "-"}, Project Task:{" "}
                                 {block.projectTask || "-"}
                               </div>
@@ -653,7 +657,7 @@ useEffect(() => {
                             <option>Internal</option>
                           </select>
                         </div>
-                            <div className="field">
+                        <div className="field">
                           <label>Project Category</label>
                           <select
                             value={hourData.category || ""}
@@ -667,36 +671,33 @@ useEffect(() => {
                           </select>
                         </div>
 
-             <div className="field">
-  <label>Project Name</label>
-  <select
-    value={hourData.name || ""}
-    onChange={(e) => updateHourDetail(hour, "name", e.target.value)}
-    disabled={formMode === "Leave"}
-  >
-    <option value="">Select Project</option>
-    {projects.map((project) => (
-      <option key={project.id} value={project.projectName}>
-        {project.projectName}
-      </option>
-    ))}
-  </select>
-</div>
-
-
                         <div className="field">
-                          <label>Project Phase</label>
+                          <label>Project Name</label>
                           <select
-                            value={hourData.phase || ""}
-                            onChange={(e) => updateHourDetail(hour, "phase", e.target.value)}
+                            value={hourData.name || ""}
+                            onChange={(e) => updateHourDetail(hour, "name", e.target.value)}
                             disabled={formMode === "Leave"}
                           >
-                            <option value="">Select Phase</option>
-                            {phases.map((p, idx) => (
-                              <option key={idx}>{p}</option>
+                            <option value="">Select Project</option>
+                            {projects.map((project) => (
+                              <option key={project.id} value={project.projectName}>
+                                {project.projectName}
+                              </option>
                             ))}
                           </select>
                         </div>
+
+                        <div className="field">
+                          <label>Project Phase</label>
+                          <input
+                            type="text"
+                            value={hourData.phase || ""}
+                            onChange={(e) => updateHourDetail(hour, "phase", e.target.value)}
+                            disabled={formMode === "Leave"}
+                            placeholder="Enter Phase"
+                          />
+                        </div>
+
                         <div className="field">
                           <label>Project Task</label>
                           <select
