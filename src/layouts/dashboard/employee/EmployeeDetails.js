@@ -21,7 +21,36 @@ const EmployeeDetails = () => {
   const [timecardData, setTimecardData] = useState([]);
   const [projects, setProjects] = useState([]);
 
+  // Helper: Pad time strings to hh:mm:ss or default
   const padTime = (t) => (t && t.match(/^\d{2}:\d{2}$/) ? t + ":00" : t || "00:00:00");
+
+  // Parse hour key from string range like "1 PM - 2 PM"
+  const parseHourKeyFromRange = (range) => {
+    const m = /^(\d{1,2})\s*(AM|PM)\s*-\s*/i.exec(range || "");
+    if (!m) return null;
+    let h = parseInt(m[1], 10);
+    const mer = m[2].toUpperCase();
+    if (mer === "PM" && h !== 12) h += 12;
+    if (mer === "AM" && h === 12) h = 24; // edge case for 12 AM
+    return h;
+  };
+
+  // Format 24-hour number to "X AM/PM" string
+  const formatHour = (hour) => {
+    if (hour === 12) return "12 PM";
+    if (hour === 24) return "12 AM";
+    return hour > 12 ? `${hour - 12} PM` : `${hour} AM`;
+  };
+
+  // Format hour range given 24h start hour
+  const formatHourRange = (h24) => {
+    const to12 = (h) => {
+      const mer = h >= 12 ? "PM" : "AM";
+      const h12 = h % 12 === 0 ? 12 : h % 12;
+      return `${h12} ${mer}`;
+    };
+    return `${to12(h24)} - ${to12(h24 + 1)}`;
+  };
 
   const handleSaveTimesheet = async () => {
     const date = selectedDate;
@@ -35,7 +64,7 @@ const EmployeeDetails = () => {
       if (hour === 13) continue; // skip lunch break
       const details = dayData[hour] || {};
       hourBlocks.push({
-        hour,
+        hour: formatHourRange(hour),
         projectType: details.type || "",
         projectCategory: details.category || "",
         projectName: details.name || "",
@@ -72,34 +101,30 @@ const EmployeeDetails = () => {
     }
   };
 
-useEffect(() => {
-  fetch("http://localhost:3001/getHourDetailsByMonthForCeo")
-    .then((res) => res.json())
-    .then((data) => {
-      if (data.success && data.data) {
-        setTimecardData(data.data);
-      }
-    })
-    .catch((err) => console.error("Fetch error (CEO):", err));
-}, []);
-useEffect(() => {
-  fetch("http://localhost:3001/getProjects")
-    .then((res) => res.json())
-    .then((data) => {
-      if (Array.isArray(data)) {
-        setProjects(data);
-      }
-    })
-    .catch((err) => console.error("Error fetching projects:", err));
-}, []);
+  useEffect(() => {
+    fetch("http://localhost:3001/getHourDetailsByMonthForCeo")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && data.data) {
+          setTimecardData(data.data);
+        }
+      })
+      .catch((err) => console.error("Fetch error (CEO):", err));
+  }, []);
 
- // empty deps = fetch once on mount
-
-  // Fetch backend data (optional, for future use)
+  useEffect(() => {
+    fetch("http://localhost:3001/getProjects")
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data)) {
+          setProjects(data);
+        }
+      })
+      .catch((err) => console.error("Error fetching projects:", err));
+  }, []);
 
   useEffect(() => {
     if (!employee?.id) return;
-
     fetch(
       `http://localhost:3001/getHourDetailsByMonth?year=${selectedYear}&month=${selectedMonth}&memberId=${employee.id}`
     )
@@ -111,10 +136,10 @@ useEffect(() => {
       })
       .catch((err) => console.error("Fetch error:", err));
   }, [employee, selectedMonth, selectedYear]);
+
   useEffect(() => {
     const email = localStorage.getItem("userEmail"); // Logged-in user's email
     if (!email) return;
-
     fetch(`http://localhost:3001/api/members/byEmail?email=${email}`)
       .then((res) => res.json())
       .then((data) => {
@@ -122,9 +147,9 @@ useEffect(() => {
       })
       .catch((err) => console.error("Error fetching employee by email:", err));
   }, []);
+
   useEffect(() => {
     if (!id) return;
-
     fetch(`http://localhost:3001/api/members/${id}`)
       .then((res) => res.json())
       .then((member) => {
@@ -136,6 +161,7 @@ useEffect(() => {
       })
       .catch((err) => console.error("Error fetching employee:", err));
   }, [id]);
+
   useEffect(() => {
     if (showPopupForm && selectedDate && employee?.email) {
       fetch(`http://localhost:3001/api/hourDetail?date=${selectedDate}&email=${employee.email}`)
@@ -143,16 +169,12 @@ useEffect(() => {
         .then((res) => {
           if (res.success && res.data) {
             const record = res.data;
-
             setCheckInOut({
               checkIn: record.checkIn || "",
               checkOut: record.checkOut || "",
             });
-
             setOvertimeHours(record.overtime || 0);
             setFormMode(record.status || "Work");
-
-            // parse hourly blocks
             try {
               const parsed = JSON.parse(record.hourBlocks || "{}");
               setHourlyDetails((prev) => ({
@@ -163,7 +185,6 @@ useEffect(() => {
               console.error("Invalid hourBlocks JSON", err);
             }
           } else {
-            // reset form if no record exists
             setCheckInOut({ checkIn: "", checkOut: "" });
             setOvertimeHours(0);
             setFormMode("Work");
@@ -177,32 +198,27 @@ useEffect(() => {
     }
   }, [showPopupForm, selectedDate, employee]);
 
-  // populate popup when opened
   useEffect(() => {
     if (!showPopupForm || !selectedDate || !timecardData) return;
 
-    // find record for selectedDate
     const entry = timecardData.find(
       (d) => new Date(d.date).toISOString().slice(0, 10) === selectedDate
     );
 
     if (entry) {
-      // check-in / check-out
       setCheckInOut({
         checkIn: entry.checkIn || "",
         checkOut: entry.checkOut || "",
       });
-
-      // overtime + status
       setOvertimeHours(entry.overtime || 0);
       setFormMode(entry.status || "Work");
-
-      // hourBlocks parsing
       try {
         const parsed = JSON.parse(entry.hourBlocks || "[]");
         const mapped = {};
         parsed.forEach((block) => {
-          mapped[block.hour] = {
+          const startHour = parseHourKeyFromRange(block.hour);
+          if (startHour == null) return;
+          mapped[startHour] = {
             type: block.projectType || "",
             category: block.projectCategory || "",
             name: block.projectName || "",
@@ -210,7 +226,6 @@ useEffect(() => {
             task: block.projectTask || "",
           };
         });
-
         setHourlyDetails((prev) => ({
           ...prev,
           [selectedDate]: mapped,
@@ -233,28 +248,20 @@ useEffect(() => {
   const daysInMonth = getAllDatesInMonth(selectedYear, selectedMonth);
 
   const phases = ["Design", "Development", "Testing", "Deployment"];
-  // const tasks = ["UI Fixes", "API Integration", "Bug Fixes", "Documentation"];
-  const tasks = ["Internal Meeting", "Customer Meeting","General"];;
+  const tasks = ["Internal Meeting", "Customer Meeting", "General"];
 
-  const formatHour = (hour) => {
-    if (hour === 12) return "12 PM";
-    if (hour === 24) return "12 AM";
-    return hour > 12 ? `${hour - 12} PM` : `${hour} AM`;
-  };
-
-  // Returns "2025-09-01" for a Date object
-  function formatDate(date) {
+  const formatDate = (date) => {
     const d = date instanceof Date ? date : new Date(date);
     const year = d.getFullYear();
     const month = (d.getMonth() + 1).toString().padStart(2, "0");
     const day = d.getDate().toString().padStart(2, "0");
     return `${year}-${month}-${day}`;
-  }
+  };
+
   const openEditPopup = (date) => {
     const formatted = formatDate(date);
     setSelectedDate(formatted);
 
-    // Get existing data for this date
     const entry = timecardData.find((d) => formatDate(d.date) === formatted);
 
     if (entry) {
@@ -269,7 +276,9 @@ useEffect(() => {
         const parsed = JSON.parse(entry.hourBlocks || "[]");
         const mapped = {};
         parsed.forEach((block) => {
-          mapped[block.hour] = {
+          const key = parseHourKeyFromRange(block.hour);
+          if (key == null) return;
+          mapped[key] = {
             type: block.projectType || "",
             category: block.projectCategory || "",
             name: block.projectName || "",
@@ -283,13 +292,11 @@ useEffect(() => {
         setHourlyDetails((prev) => ({ ...prev, [formatted]: {} }));
       }
     } else {
-      // No data yet for this date
       setCheckInOut({ checkIn: "", checkOut: "" });
       setOvertimeHours(0);
       setFormMode("Work");
       setHourlyDetails((prev) => ({ ...prev, [formatted]: {} }));
     }
-
     setShowPopupForm(true);
   };
 
@@ -326,55 +333,91 @@ useEffect(() => {
     }
   }, [formMode, selectedDate]);
 
-  // Calculate work hours for a day (all filled hour blocks except break hour 13)
-  const getWorkHours = (details = {}) => {
-    let count = 0;
-    for (let hour = 10; hour <= 18; hour++) {
-      if (hour === 13) continue; // lunch break
-      const hd = details[hour];
-      if (hd && hd.type) count++;
-    }
-    return count;
-  };
+  // const getWorkHours = (details = {}) => {
+  //   let count = 0;
+  //   for (let hour = 10; hour <= 18; hour++) {
+  //     if (hour === 13) continue; // lunch break
+  //     const hd = details[hour];
+  //     if (hd && hd.type) count++;
+  //   }
+  //   return count;
+  // };
+     
+    const getWorkHours = (row) => {
+      if (!row.checkIn || !row.checkOut) return 0;
 
-  // For meal break, just say 1hr 1-2pm for now, or customize
+      const checkIn = row.checkIn.includes(":") ? row.checkIn : "00:00:00";
+      const checkOut = row.checkOut.includes(":") ? row.checkOut : "00:00:00";
+
+      const [inH, inM] = checkIn.split(":").map(Number);
+      const [outH, outM] = checkOut.split(":").map(Number);
+
+      let diff = outH * 60 + outM - (inH * 60 + inM);
+      if (diff < 0) diff = 0; // prevent negative hours
+
+      // Subtract 1 hour lunch if between 10-18
+      if (inH <= 13 && outH >= 14) diff -= 60;
+
+      return (diff / 60).toFixed(2); // return hours in decimal
+    };
+
+
   const getMealBreak = () => "1 hr";
-  // calculate totals
   const calculateTotals = () => {
-    let total = 0;
-    let regular = 0;
-    let overtime = 0;
-    let holiday = 0;
+  let total = 0;
+  let regular = 0;
+  let overtime = 0;
+  let holiday = 0;
 
-    timecardData.forEach((row) => {
-      if (row.status === "Leave" || row.status === "Holiday") {
-        // count a leave/holiday as 8 hrs (adjust if your org uses a different rule)
-        holiday += 1;
+  timecardData.forEach((row) => {
+    if (row.status === "Leave" || row.status === "Holiday") {
+      holiday += 1;
+      return;
+    }
 
-        return;
-      }
+    const worked = parseFloat(getWorkHours(row)) || 0;
+    const ot = parseFloat(row.overtime) || 0;
 
-      // Parse hourBlocks and count worked hours
-      let worked = 0;
-      try {
-        const hourBlocks = JSON.parse(row.hourBlocks || "[]");
-        worked = hourBlocks.filter(
-          (block) =>
-            block.projectType || block.projectCategory || block.projectName || block.projectPhase || block.projectTask
-        ).length;
-      } catch (err) {
-        console.error("Error parsing hourBlocks:", err);
-      }
+    total += worked + ot;
+    regular += worked;
+    overtime += ot;
+  });
 
-      const ot = parseFloat(row.overtime) || 0;
+  return { total, regular, overtime, holiday };
+};
 
-      total += worked + ot;
-      regular += worked;
-      overtime += ot;
-    });
+  // const calculateTotals = () => {
+  //   let total = 0;
+  //   let regular = 0;
+  //   let overtime = 0;
+  //   let holiday = 0;
 
-    return { total, regular, overtime, holiday };
-  };
+  //   timecardData.forEach((row) => {
+  //     if (row.status === "Leave" || row.status === "Holiday") {
+  //       holiday += 1;
+  //       return;
+  //     }
+  //     let worked = 0;
+  //     try {
+  //       const hourBlocks = JSON.parse(row.hourBlocks || "[]");
+  //       worked = hourBlocks.filter(
+  //         (block) =>
+  //           block.projectType ||
+  //           block.projectCategory ||
+  //           block.projectName ||
+  //           block.projectPhase ||
+  //           block.projectTask
+  //       ).length;
+  //     } catch (err) {
+  //       console.error("Error parsing hourBlocks:", err);
+  //     }
+  //     const ot = parseFloat(row.overtime) || 0;
+  //     total += worked + ot;
+  //     regular += worked;
+  //     overtime += ot;
+  //   });
+  //   return { total, regular, overtime, holiday };
+  // };
 
   const { total, regular, overtime, holiday } = calculateTotals();
 
@@ -385,13 +428,9 @@ useEffect(() => {
         <>
           <div className={`employee-detail-container ${showPopupForm ? "blur" : ""}`}>
             <div className="header">
-              {/* <Link to="/" className="back-link">
-                ← Back
-              </Link> */}
               <h1>Time & Attendance</h1>
             </div>
             <div className="profile-section">
-              {/* <img src="https://via.placeholder.com/60" alt="Employee" className="profile-pic" /> */}
               <div className="profile-info">
                 <h2>{employee?.fullName || "No name found"}</h2>
                 <p className="role">{employee?.role || "No role found"}</p>
@@ -403,19 +442,6 @@ useEffect(() => {
                 <p>{holiday} Holiday</p>
               </div>
             </div>
-            {/* <div className="progress-section">
-              <p className="progress-text">Hour breakdown: 264 hrs</p>
-              <div className="progress-bar">
-                <div className="approved" style={{ width: "70%" }}></div>
-                <div className="overtime" style={{ width: "20%" }}></div>
-                <div className="pending" style={{ width: "10%" }}></div>
-              </div>
-              <div className="progress-legend">
-                <span className="legend green">{regular} hrs Regular</span>
-                <span className="legend red">{overtime} hrs Overtime</span>
-                <span className="legend orange">{holiday} Holidays</span>
-              </div>
-            </div> */}
             <div className="tabs">
               <button
                 className={`tab ${activeTab === "timecard" ? "active" : ""}`}
@@ -470,29 +496,27 @@ useEffect(() => {
                   </thead>
                   <tbody>
                     {timecardData.map((row) => {
-                      const hourBlocks = JSON.parse(row.hourBlocks || "[]"); // parse JSON string
-                      const details = row.hourBlocks || "-";
+                      const hourBlocks = JSON.parse(row.hourBlocks || "[]");
                       return (
                         <tr key={row.id}>
-                          <td>{formatDate(row.date)}</td> {/* Date */}
-                          <td>{row.checkIn}</td> {/* Check-in */}
-                          <td>{row.checkOut}</td> {/* Check-out */}
-                          <td>{row.mealBreak || "1 hr"}</td> {/* Meal Break */}
-                          <td>{getWorkHours(hourBlocks)}</td> {/* Work Hours */}
-                          <td>{row.overtime || 0}</td> {/* Overtime */}
-                          <td>{row.approval || "Pending"}</td> {/* Approval */}
+                          <td>{formatDate(row.date)}</td>
+                          <td>{row.checkIn}</td>
+                          <td>{row.checkOut}</td>
+                          <td>{row.mealBreak || "1 hr"}</td>
+                          <td>{getWorkHours(row)}</td>
+                          <td>{row.overtime || 0}</td>
+                          <td>{row.approval || "Pending"}</td>
                           <td>
-                            {JSON.parse(row.hourBlocks || "[]").map((block, idx) => (
+                            {hourBlocks.map((block, idx) => (
                               <div key={idx}>
-                                Hour: {block.hour},Project Type: {block.projectType || "-"},
-                                Project Category: {block.projectCategory || "-"},
-                                Project Name: {block.projectName || "-"},Project Phase:{" "}
+                                Hour: {block.hour}, Project Type: {block.projectType || "-"}, Project
+                                Category: {block.projectCategory || "-"}, Project Name:{" "}
+                                {block.projectName || "-"}, Project Phase:{" "}
                                 {block.projectPhase || "-"}, Project Task:{" "}
                                 {block.projectTask || "-"}
                               </div>
                             ))}
                           </td>
-                          {/* Details */}
                         </tr>
                       );
                     })}
@@ -515,11 +539,7 @@ useEffect(() => {
 
                 {daysInMonth.map((date, index) => {
                   const formatted = formatDate(date);
-
-                  const entry = timecardData.find(
-                    (d) => formatDate(d.date) === formatted // ✅ fixed
-                  );
-
+                  const entry = timecardData.find((d) => formatDate(d.date) === formatted);
                   const hourBlocks = entry ? JSON.parse(entry.hourBlocks || "[]") : [];
 
                   return (
@@ -528,7 +548,12 @@ useEffect(() => {
 
                       {[...Array(9)].map((_, hourIdx) => {
                         const hour = 10 + hourIdx;
-                        const block = hourBlocks.find((b) => b.hour === hour);
+                        const block = hourBlocks.find(
+                          (b) =>
+                            b.hour === formatHourRange(hour) ||
+                            (b.hourKey && b.hourKey === hour) ||
+                            (typeof b.hour === "string" && parseHourKeyFromRange(b.hour) === hour)
+                        );
 
                         const status = entry?.status || "Work";
                         const isLeave = status === "Leave";
@@ -634,7 +659,7 @@ useEffect(() => {
                   </div>
                   {[...Array(9)].map((_, i) => {
                     const hour = 10 + i;
-                    if (hour === 13) return null;
+                    if (hour === 13) return null; 
                     const hourData = hourlyDetails[selectedDate]?.[hour] || {};
                     return (
                       <div key={i} className="hour-block">
@@ -653,35 +678,43 @@ useEffect(() => {
                             <option>Internal</option>
                           </select>
                         </div>
-             <div className="field">
-  <label>Project Name</label>
-  <select
-    value={hourData.name || ""}
-    onChange={(e) => updateHourDetail(hour, "name", e.target.value)}
-    disabled={formMode === "Leave"}
-  >
-    <option value="">Select Project</option>
-    {projects.map((project) => (
-      <option key={project.id} value={project.projectName}>
-        {project.projectName}
-      </option>
-    ))}
-  </select>
-</div>
-
-
+                        <div className="field">
+                          <label>Project Category</label>
+                          <select
+                            value={hourData.category || ""}
+                            onChange={(e) => updateHourDetail(hour, "category", e.target.value)}
+                            disabled={formMode === "Leave"}
+                          >
+                            <option value="">Select Category</option>
+                            <option>Software</option>
+                            <option>Engineering</option>
+                            <option>Training</option>
+                          </select>
+                        </div>
+                        <div className="field">
+                          <label>Project Name</label>
+                          <select
+                            value={hourData.name || ""}
+                            onChange={(e) => updateHourDetail(hour, "name", e.target.value)}
+                            disabled={formMode === "Leave"}
+                          >
+                            <option value="">Select Project</option>
+                            {projects.map((project) => (
+                              <option key={project.id} value={project.projectName}>
+                                {project.projectName}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
                         <div className="field">
                           <label>Project Phase</label>
-                          <select
+                          <input
+                            type="text"
                             value={hourData.phase || ""}
                             onChange={(e) => updateHourDetail(hour, "phase", e.target.value)}
                             disabled={formMode === "Leave"}
-                          >
-                            <option value="">Select Phase</option>
-                            {phases.map((p, idx) => (
-                              <option key={idx}>{p}</option>
-                            ))}
-                          </select>
+                            placeholder="Enter Phase"
+                          />
                         </div>
                         <div className="field">
                           <label>Project Task</label>
