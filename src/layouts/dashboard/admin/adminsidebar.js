@@ -59,7 +59,7 @@ const AdminSidebar = () => {
           {[
             // { to: "/dashboard/admin", icon: "dashboard", label: "Dashboard" },
             { to: "/members", icon: "group", label: "Employees" },
-            { to: "/add-member", icon: "person_add", label: "Add Member" },
+            { to: "/add-member", icon: "person_add", label: "Add Employee" },
             { to: "/projectStatus", icon: "projects", label: "Project status" },
             // { to: "/profile", icon: "account_circle", label: "Profile" },
             // { to: "/notifications", icon: "notifications", label: "Notifications" },

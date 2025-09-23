@@ -23,37 +23,30 @@ const ProjectStatus = () => {
   const [activeTab, setActiveTab] = useState("projectStatus");
 
   useEffect(() => {
-  // Clear previous project details and selected employee when month/year changes
-  setSelectedProjectDetails(null);
-  setSelectedEmployee(null);
-}, [selectedMonth, selectedYear]);
+    setSelectedProjectDetails(null);
+    setSelectedEmployee(null);
+  }, [selectedMonth, selectedYear]);
 
-  // Fetch members
   useEffect(() => {
     fetch("http://localhost:3001/api/members")
-      .then((res) => res.json())
-      .then((data) => Array.isArray(data) && setMembers(data))
-      .catch((err) => console.error("Error fetching members:", err));
+      .then(res => res.json())
+      .then(data => Array.isArray(data) && setMembers(data))
+      .catch(err => console.error("Error fetching members:", err));
   }, []);
 
-  // Fetch projects
   useEffect(() => {
     fetch("http://localhost:3001/getProjects")
-      .then((res) => res.json())
-      .then((data) => Array.isArray(data) && setProjects(data))
-      .catch((err) => console.error("Error fetching projects:", err));
+      .then(res => res.json())
+      .then(data => Array.isArray(data) && setProjects(data))
+      .catch(err => console.error("Error fetching projects:", err));
   }, []);
 
-  // Filter projects active in selected month
-  const filteredProjects = projects.filter((p) => {
+  const filteredProjects = projects.filter(p => {
     if (!p.startDate || !p.endDate) return false;
-
     const projectStart = new Date(p.startDate);
     const projectEnd = new Date(p.endDate);
-
     const monthStart = new Date(selectedYear, selectedMonth, 1);
     const monthEnd = new Date(selectedYear, selectedMonth + 1, 0);
-
     return projectStart <= monthEnd && projectEnd >= monthStart;
   });
 
@@ -61,15 +54,14 @@ const ProjectStatus = () => {
     setSelectedProjectDetails(null);
   }
 
-  // Handle project click
   const handleRowClick = async (project) => {
-    setSelectedEmployee(null); // clear previous selection
+    setSelectedEmployee(null);
     try {
       const res = await fetch("http://localhost:3001/getHourDetailsByMonthForCeo");
       const data = await res.json();
 
       if (data.success && Array.isArray(data.data)) {
-        const monthFilteredData = data.data.filter((entry) => {
+        const monthFilteredData = data.data.filter(entry => {
           const entryDate = new Date(entry.date || entry.startDate);
           const monthStart = new Date(selectedYear, selectedMonth, 1);
           const monthEnd = new Date(selectedYear, selectedMonth + 1, 0);
@@ -77,17 +69,20 @@ const ProjectStatus = () => {
         });
 
         const filtered = monthFilteredData
-          .map((entry) => {
+          .map(entry => {
             const blocks = entry.hourBlocks ? JSON.parse(entry.hourBlocks) : [];
-            const projectBlocks = blocks.filter((b) => b.projectName === project.projectName);
+            const projectBlocks = blocks.filter(b => b.projectName === project.projectName);
+
             if (projectBlocks.length > 0) {
-              const member = members.find((m) => m.id === entry.memberId);
+              const member = members.find(m => m.id === entry.memberId);
               return {
                 fullname: member?.fullName || `Unknown (${entry.memberId})`,
                 role: entry.role || "-",
                 totalHours: entry.totalHours || 0,
-                hourBlocks: projectBlocks.map((b) => ({
+                // attach date for each block
+                hourBlocks: projectBlocks.map(b => ({
                   ...b,
+                  date: entry.date || entry.startDate,
                   fullName: member?.fullName || `Unknown (${entry.memberId})`,
                 })),
               };
@@ -103,41 +98,62 @@ const ProjectStatus = () => {
     }
   };
 
-  // CSV report
-  const handleCreateReport = () => {
-    let csvContent = "Project Name,Employee,Hour,Project Type,Project Phase,Project Task\n";
+  // csv export
+  const handleCreateReport = async () => {
+  if (!selectedProjectDetails || !selectedEmployee) {
+    toast.error("Please select a project and an employee first");
+    return;
+  }
 
-    if (filteredProjects.length === 0) {
-      csvContent = `Project Name\nNo projects found for ${selectedMonth + 1}/${selectedYear}`;
-    } else {
-      filteredProjects.forEach((project) => {
-        const projectDetails = selectedProjectDetails?.filter((entry) =>
-          entry.hourBlocks.some((b) => b.projectName === project.projectName)
-        ) || [];
+  try {
+    // Fetch all hour details from DB (all months)
+    const res = await fetch("http://localhost:3001/getHourDetailsByMonthForCeo");
+    const data = await res.json();
 
-        if (projectDetails.length > 0) {
-          projectDetails.forEach((entry) => {
-            entry.hourBlocks.forEach((b) => {
-              csvContent += `${project.projectName},${entry.fullname},${b.hour},${b.projectType || "-"},${b.projectPhase || "-"},${b.projectTask || "-"}\n`;
-            });
-          });
-        } else {
-          csvContent += `${project.projectName},,,,-,-\n`;
-        }
+    if (data.success && Array.isArray(data.data)) {
+      // Find all entries for the selected employee
+      const employeeData = data.data.filter(
+        entry => entry.memberId === members.find(m => m.fullName === selectedEmployee.fullname)?.id
+      );
+
+      let csvContent = "Project Name,Employee,Hour,Project Type,Project Phase,Project Task,Date\n";
+
+      employeeData.forEach(entry => {
+        const blocks = entry.hourBlocks ? JSON.parse(entry.hourBlocks) : [];
+        // Only include blocks for the selected project
+        const projectBlocks = blocks.filter(
+          b =>
+            b.projectName ===
+            filteredProjects.find(p =>
+              selectedProjectDetails.some(d => d.fullname === selectedEmployee.fullname && d.hourBlocks.some(hb => hb.projectName === p.projectName))
+            )?.projectName
+        );
+
+        projectBlocks.forEach(b => {
+          // Attach correct date from entry
+          const blockDate = entry.date || entry.startDate || b.date;
+          csvContent += `${b.projectName || "-"},${selectedEmployee.fullname || "-"},${b.hour || 0},${b.projectType || "-"},${b.projectPhase || "-"},${b.projectTask || "-"},${blockDate ? new Date(blockDate).toLocaleDateString() : "-"}\n`;
+        });
       });
+
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `project-${selectedEmployee.fullname}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      toast.success("CSV downloaded!");
     }
+  } catch (err) {
+    console.error("Error creating CSV:", err);
+    toast.error("Failed to create CSV");
+  }
+};
 
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.setAttribute("download", `projectstatus-${selectedMonth + 1}-${selectedYear}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
 
-    toast.success("Project Status report downloaded!");
-  };
 
   return (
     <DashboardLayout>
@@ -147,52 +163,31 @@ const ProjectStatus = () => {
         <div className="main">
           <h1 className="title">Project Status</h1>
 
-          {/* Tabs */}
           <div className="tabs">
-            <button
-              className={`tab ${activeTab === "projectStatus" ? "active" : ""}`}
-              onClick={() => setActiveTab("projectStatus")}
-            >
+            <button className={`tab ${activeTab === "projectStatus" ? "active" : ""}`} onClick={() => setActiveTab("projectStatus")}>
               Project Status
             </button>
-            <button
-              className={`tab ${activeTab === "addProject" ? "active" : ""}`}
-              onClick={() => setActiveTab("addProject")}
-            >
+            <button className={`tab ${activeTab === "addProject" ? "active" : ""}`} onClick={() => setActiveTab("addProject")}>
               Add Project
             </button>
           </div>
 
           {activeTab === "projectStatus" && (
             <>
-              {/* Period Selector */}
               <div className="period">
                 <div>
                   <p className="period-label">Time period:</p>
                   <div className="date-picker" style={{ display: "flex", gap: "1rem" }}>
                     <FormControl size="small" style={{ minWidth: 120 }}>
                       <InputLabel id="month-label">Month</InputLabel>
-                      <Select
-                        labelId="month-label"
-                        value={selectedMonth}
-                        onChange={(e) => setSelectedMonth(Number(e.target.value))}
-                      >
-                        {["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"].map(
-                          (m, i) => <MenuItem key={i} value={i}>{m}</MenuItem>
-                        )}
+                      <Select labelId="month-label" value={selectedMonth} onChange={(e) => setSelectedMonth(Number(e.target.value))}>
+                        {["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"].map((m,i) => <MenuItem key={i} value={i}>{m}</MenuItem>)}
                       </Select>
                     </FormControl>
-
                     <FormControl size="small" style={{ minWidth: 100 }}>
                       <InputLabel id="year-label">Year</InputLabel>
-                      <Select
-                        labelId="year-label"
-                        value={selectedYear}
-                        onChange={(e) => setSelectedYear(Number(e.target.value))}
-                      >
-                        {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() + i).map(
-                          (y) => <MenuItem key={y} value={y}>{y}</MenuItem>
-                        )}
+                      <Select labelId="year-label" value={selectedYear} onChange={(e) => setSelectedYear(Number(e.target.value))}>
+                        {Array.from({ length: 5 }, (_,i) => new Date().getFullYear() + i).map(y => <MenuItem key={y} value={y}>{y}</MenuItem>)}
                       </Select>
                     </FormControl>
                   </div>
@@ -204,40 +199,30 @@ const ProjectStatus = () => {
                 </div>
               </div>
 
-              {/* Project Table */}
               <table className="table">
                 <thead>
                   <tr><th>Project Name</th></tr>
                 </thead>
                 <tbody>
-                  {filteredProjects.length > 0 ? (
-                    filteredProjects.map((project) => (
-                      <tr key={project.id} onClick={() => handleRowClick(project)}>
-                        <td>{project.projectName}</td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr><td>No projects found for {selectedMonth + 1}/{selectedYear}</td></tr>
-                  )}
+                  {filteredProjects.length > 0 ? filteredProjects.map(project => (
+                    <tr key={project.id} onClick={() => handleRowClick(project)}>
+                      <td>{project.projectName}</td>
+                    </tr>
+                  )) : <tr><td>No projects found for {selectedMonth + 1}/{selectedYear}</td></tr>}
                 </tbody>
               </table>
 
-              {/* Project Details */}
               {selectedProjectDetails && selectedProjectDetails.length > 0 && (
                 <div className="project-details">
                   <h3>Employees in Project</h3>
                   <table className="table">
                     <thead>
                       <tr><th>Employee</th></tr>
-    
-                      {/* <th>Role</th><th>Total Hours</th> */}
-                                      </thead>
+                    </thead>
                     <tbody>
-                      {selectedProjectDetails.map((detail, index) => (
+                      {selectedProjectDetails.map((detail,index) => (
                         <tr key={index} onClick={() => setSelectedEmployee(detail)} style={{ cursor: "pointer" }}>
                           <td>{detail.fullname}</td>
-                          {/* <td>{detail.role}</td>
-                          <td>{detail.totalHours}</td> */}
                         </tr>
                       ))}
                     </tbody>
@@ -249,17 +234,23 @@ const ProjectStatus = () => {
                       <table className="table table-bordered">
                         <thead>
                           <tr>
-                            <th>Hour</th><th>Project Type</th><th>Project Name</th><th>Project Phase</th><th>Project Task</th>
+                            <th>Hour</th>
+                            <th>Project Type</th>
+                            <th>Project Name</th>
+                            <th>Project Phase</th>
+                            <th>Project Task</th>
+                            <th>Date</th>
                           </tr>
                         </thead>
                         <tbody>
-                          {selectedEmployee.hourBlocks.map((b, i) => (
+                          {selectedEmployee.hourBlocks.map((b,i) => (
                             <tr key={i}>
                               <td>{b.hour}</td>
                               <td>{b.projectType || "-"}</td>
                               <td>{b.projectName || "-"}</td>
                               <td>{b.projectPhase || "-"}</td>
                               <td>{b.projectTask || "-"}</td>
+                              <td>{b.date ? new Date(b.date).toLocaleDateString() : "-"}</td>
                             </tr>
                           ))}
                         </tbody>

@@ -103,7 +103,7 @@ const AddMembers = () => {
       });
       setShowExample(false);
     } catch (error) {
-      alert("Failed to add member: " + error.message);
+      alert("Failed to add employee: " + error.message);
     }
   };
 
@@ -136,7 +136,7 @@ const AddMembers = () => {
               }}
             >
               <Typography variant="h5" fontWeight="bold">
-                Add New Member
+                Add New Employee
               </Typography>
               <Typography variant="subtitle2">Enter details to register</Typography>
             </Box>
@@ -329,7 +329,7 @@ const AddMembers = () => {
                     },
                   }}
                 >
-                  Add Member
+                  Add Employee
                 </Button>
               </Box>
             </form>
