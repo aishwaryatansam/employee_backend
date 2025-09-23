@@ -538,7 +538,7 @@ function TLAddProject() {
                       <strong>Members:</strong> {project.assignedMembers}
                     </Typography>
 
-                    {project.phases && project.phases.length > 0 && (
+                    {/* {project.phases && project.phases.length > 0 && (
                       <Box mt={1}>
                         <Typography variant="body2" fontWeight="bold">
                           Phases:
@@ -565,7 +565,7 @@ function TLAddProject() {
                           </Box>
                         ))}
                       </Box>
-                    )}
+                    )} */}
                     <Box mt={2} display="flex" gap={1}>
                       <Button
                         onClick={() => handleEditProject(index)}
