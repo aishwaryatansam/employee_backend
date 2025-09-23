@@ -333,50 +333,91 @@ const EmployeeDetails = () => {
     }
   }, [formMode, selectedDate]);
 
-  const getWorkHours = (details = {}) => {
-    let count = 0;
-    for (let hour = 10; hour <= 18; hour++) {
-      if (hour === 13) continue; // lunch break
-      const hd = details[hour];
-      if (hd && hd.type) count++;
-    }
-    return count;
-  };
+  // const getWorkHours = (details = {}) => {
+  //   let count = 0;
+  //   for (let hour = 10; hour <= 18; hour++) {
+  //     if (hour === 13) continue; // lunch break
+  //     const hd = details[hour];
+  //     if (hd && hd.type) count++;
+  //   }
+  //   return count;
+  // };
+     
+    const getWorkHours = (row) => {
+      if (!row.checkIn || !row.checkOut) return 0;
+
+      const checkIn = row.checkIn.includes(":") ? row.checkIn : "00:00:00";
+      const checkOut = row.checkOut.includes(":") ? row.checkOut : "00:00:00";
+
+      const [inH, inM] = checkIn.split(":").map(Number);
+      const [outH, outM] = checkOut.split(":").map(Number);
+
+      let diff = outH * 60 + outM - (inH * 60 + inM);
+      if (diff < 0) diff = 0; // prevent negative hours
+
+      // Subtract 1 hour lunch if between 10-18
+      if (inH <= 13 && outH >= 14) diff -= 60;
+
+      return (diff / 60).toFixed(2); // return hours in decimal
+    };
+
 
   const getMealBreak = () => "1 hr";
-
   const calculateTotals = () => {
-    let total = 0;
-    let regular = 0;
-    let overtime = 0;
-    let holiday = 0;
+  let total = 0;
+  let regular = 0;
+  let overtime = 0;
+  let holiday = 0;
 
-    timecardData.forEach((row) => {
-      if (row.status === "Leave" || row.status === "Holiday") {
-        holiday += 1;
-        return;
-      }
-      let worked = 0;
-      try {
-        const hourBlocks = JSON.parse(row.hourBlocks || "[]");
-        worked = hourBlocks.filter(
-          (block) =>
-            block.projectType ||
-            block.projectCategory ||
-            block.projectName ||
-            block.projectPhase ||
-            block.projectTask
-        ).length;
-      } catch (err) {
-        console.error("Error parsing hourBlocks:", err);
-      }
-      const ot = parseFloat(row.overtime) || 0;
-      total += worked + ot;
-      regular += worked;
-      overtime += ot;
-    });
-    return { total, regular, overtime, holiday };
-  };
+  timecardData.forEach((row) => {
+    if (row.status === "Leave" || row.status === "Holiday") {
+      holiday += 1;
+      return;
+    }
+
+    const worked = parseFloat(getWorkHours(row)) || 0;
+    const ot = parseFloat(row.overtime) || 0;
+
+    total += worked + ot;
+    regular += worked;
+    overtime += ot;
+  });
+
+  return { total, regular, overtime, holiday };
+};
+
+  // const calculateTotals = () => {
+  //   let total = 0;
+  //   let regular = 0;
+  //   let overtime = 0;
+  //   let holiday = 0;
+
+  //   timecardData.forEach((row) => {
+  //     if (row.status === "Leave" || row.status === "Holiday") {
+  //       holiday += 1;
+  //       return;
+  //     }
+  //     let worked = 0;
+  //     try {
+  //       const hourBlocks = JSON.parse(row.hourBlocks || "[]");
+  //       worked = hourBlocks.filter(
+  //         (block) =>
+  //           block.projectType ||
+  //           block.projectCategory ||
+  //           block.projectName ||
+  //           block.projectPhase ||
+  //           block.projectTask
+  //       ).length;
+  //     } catch (err) {
+  //       console.error("Error parsing hourBlocks:", err);
+  //     }
+  //     const ot = parseFloat(row.overtime) || 0;
+  //     total += worked + ot;
+  //     regular += worked;
+  //     overtime += ot;
+  //   });
+  //   return { total, regular, overtime, holiday };
+  // };
 
   const { total, regular, overtime, holiday } = calculateTotals();
 
@@ -462,7 +503,7 @@ const EmployeeDetails = () => {
                           <td>{row.checkIn}</td>
                           <td>{row.checkOut}</td>
                           <td>{row.mealBreak || "1 hr"}</td>
-                          <td>{getWorkHours(hourBlocks)}</td>
+                          <td>{getWorkHours(row)}</td>
                           <td>{row.overtime || 0}</td>
                           <td>{row.approval || "Pending"}</td>
                           <td>
