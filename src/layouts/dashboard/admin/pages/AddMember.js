@@ -193,6 +193,7 @@ const AddMembers = () => {
                       <MenuItem value="AR | VR | MR Research Centre">
                         AR | VR | MR Research Centre
                       </MenuItem>
+                      <MenuItem value="Digital Technology">Digital Technology</MenuItem>
                       <MenuItem value="Research Centre For PLM">Research Centre For PLM</MenuItem>
                       <MenuItem value="Research Centre For Asset Performance">
                         Research Centre For Asset Performance
@@ -215,9 +216,10 @@ const AddMembers = () => {
                       onChange={handleChange}
                       label="Role *"
                     >
-                      <MenuItem value="hr">HR</MenuItem>
+                      {/* <MenuItem value="hr">HR</MenuItem>
                       <MenuItem value="tl">Team Lead</MenuItem>
-                      <MenuItem value="ceo">CEO</MenuItem>
+                      <MenuItem value="ceo">CEO</MenuItem> */}
+                      <MenuItem value="admin">Admin</MenuItem>
                       <MenuItem value="employee">Employee</MenuItem>
                     </Select>
                   </FormControl>
