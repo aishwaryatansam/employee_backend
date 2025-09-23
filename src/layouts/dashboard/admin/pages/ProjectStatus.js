@@ -23,10 +23,10 @@ const ProjectStatus = () => {
   const [activeTab, setActiveTab] = useState("projectStatus");
 
   useEffect(() => {
-  // Clear previous project details and selected employee when month/year changes
-  setSelectedProjectDetails(null);
-  setSelectedEmployee(null);
-}, [selectedMonth, selectedYear]);
+    // Clear previous project details and selected employee when month/year changes
+    setSelectedProjectDetails(null);
+    setSelectedEmployee(null);
+  }, [selectedMonth, selectedYear]);
 
   // Fetch members
   useEffect(() => {
@@ -62,113 +62,115 @@ const ProjectStatus = () => {
   }
 
   // Handle project click
-const handleRowClick = async (project) => {
-  setSelectedEmployee(null);
-  
-  try {
-    const res = await fetch("http://localhost:3001/getHourDetailsByMonthForCeo");
-    const data = await res.json();
+  const handleRowClick = async (project) => {
+    setSelectedEmployee(null);
 
-    if (data.success && Array.isArray(data.data)) {
-      const employeeMap = {};
-      
-      data.data.forEach((entry) => {
-        const entryDate = new Date(entry.date);
-        if (entryDate.getMonth() === selectedMonth && entryDate.getFullYear() === selectedYear) {
-          
-          const blocks = JSON.parse(entry.hourBlocks || "[]");
-          const projectBlocks = blocks.filter((b) => b.projectName === project.projectName);
-          
-          if (projectBlocks.length > 0) {
-            const member = members.find((m) => m.id === entry.memberId);
-            const employeeName = member?.fullName || `Unknown`;
-            
-            if (!employeeMap[employeeName]) {
-              employeeMap[employeeName] = {
-                fullname: employeeName,
-                hourBlocks: []
-              };
-            }
-            
-            // Add date to each hour block
-            const blocksWithDate = projectBlocks.map(block => ({
-              ...block,
-              entryDate: entry.date // Add the date from main entry
-            }));
-            
-            employeeMap[employeeName].hourBlocks.push(...blocksWithDate);
-          }
-        }
-      });
-      
-      setSelectedProjectDetails(Object.values(employeeMap));
-    }
-  } catch (err) {
-    console.error("Error:", err);
-  }
-};
-
-
-
-  // CSV report
-const handleCreateReport = async () => {
-  let csvContent = "Project Name,Employee,Date,Hour,Project Type,Project Phase,Project Task\n";
-
-  if (filteredProjects.length === 0) {
-    csvContent = `Project Name\nNo projects found for ${selectedMonth + 1}/${selectedYear}`;
-  } else {
     try {
-      // Fetch data for CSV
       const res = await fetch("http://localhost:3001/getHourDetailsByMonthForCeo");
       const data = await res.json();
 
       if (data.success && Array.isArray(data.data)) {
-        filteredProjects.forEach((project) => {
-          let hasData = false;
+        const employeeMap = {};
 
-          data.data.forEach((entry) => {
-            const entryDate = new Date(entry.date);
-            if (entryDate.getMonth() === selectedMonth && entryDate.getFullYear() === selectedYear) {
-              
-              const blocks = JSON.parse(entry.hourBlocks || "[]");
-              const projectBlocks = blocks.filter((b) => b.projectName === project.projectName);
-              
-              if (projectBlocks.length > 0) {
-                hasData = true;
-                const member = members.find((m) => m.id === entry.memberId);
-                const employeeName = member?.fullName || "Unknown";
-                const dateStr = entryDate.toLocaleDateString();
-                
-                projectBlocks.forEach((b) => {
-                  csvContent += `${project.projectName},${employeeName},${dateStr},${b.hour},${b.projectType || "-"},${b.projectPhase || "-"},${b.projectTask || "-"}\n`;
-                });
+        data.data.forEach((entry) => {
+          const entryDate = new Date(entry.date);
+          if (entryDate.getMonth() === selectedMonth && entryDate.getFullYear() === selectedYear) {
+            const blocks = JSON.parse(entry.hourBlocks || "[]");
+            const projectBlocks = blocks.filter((b) => b.projectName === project.projectName);
+
+            if (projectBlocks.length > 0) {
+              const member = members.find((m) => m.id === entry.memberId);
+              const employeeName = member?.fullName || `Unknown`;
+
+              if (!employeeMap[employeeName]) {
+                employeeMap[employeeName] = {
+                  fullname: employeeName,
+                  hourBlocks: [],
+                };
               }
-            }
-          });
 
-          if (!hasData) {
-            csvContent += `${project.projectName},,,-,-,-,-\n`;
+              // Add date to each hour block
+              const blocksWithDate = projectBlocks.map((block) => ({
+                ...block,
+                entryDate: entry.date, // Add the date from main entry
+              }));
+
+              employeeMap[employeeName].hourBlocks.push(...blocksWithDate);
+            }
           }
         });
+
+        setSelectedProjectDetails(Object.values(employeeMap));
       }
     } catch (err) {
       console.error("Error:", err);
     }
-  }
+  };
 
-  // Download CSV
-  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.setAttribute("download", `projectstatus-${selectedMonth + 1}-${selectedYear}.csv`);
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
+  // CSV report
+  const handleCreateReport = async () => {
+    if (!selectedProjectDetails || !selectedEmployee) {
+      toast.error("Please select a project and an employee first");
+      return;
+    }
 
-  toast.success("Project Status report downloaded!");
-};
+    try {
+      // Fetch all hour details from DB (all months)
+      const res = await fetch("http://localhost:3001/getHourDetailsByMonthForCeo");
+      const data = await res.json();
 
+      if (data.success && Array.isArray(data.data)) {
+        // Find all entries for the selected employee
+        const employeeData = data.data.filter(
+          (entry) =>
+            entry.memberId === members.find((m) => m.fullName === selectedEmployee.fullname)?.id
+        );
+
+        let csvContent =
+          "Project Name,Employee,Hour,Project Type,Project Phase,Project Task,Date\n";
+
+        employeeData.forEach((entry) => {
+          const blocks = entry.hourBlocks ? JSON.parse(entry.hourBlocks) : [];
+          // Only include blocks for the selected project
+          const projectBlocks = blocks.filter(
+            (b) =>
+              b.projectName ===
+              filteredProjects.find((p) =>
+                selectedProjectDetails.some(
+                  (d) =>
+                    d.fullname === selectedEmployee.fullname &&
+                    d.hourBlocks.some((hb) => hb.projectName === p.projectName)
+                )
+              )?.projectName
+          );
+
+          projectBlocks.forEach((b) => {
+            // Attach correct date from entry
+            const blockDate = entry.date || entry.startDate || b.date;
+            csvContent += `${b.projectName || "-"},${selectedEmployee.fullname || "-"},${
+              b.hour || 0
+            },${b.projectType || "-"},${b.projectPhase || "-"},${b.projectTask || "-"},${
+              blockDate ? new Date(blockDate).toLocaleDateString() : "-"
+            }\n`;
+          });
+        });
+
+        const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.setAttribute("download", `project-${selectedEmployee.fullname}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        toast.success("CSV downloaded!");
+      }
+    } catch (err) {
+      console.error("Error creating CSV:", err);
+      toast.error("Failed to create CSV");
+    }
+  };
 
   return (
     <DashboardLayout>
@@ -208,9 +210,24 @@ const handleCreateReport = async () => {
                         value={selectedMonth}
                         onChange={(e) => setSelectedMonth(Number(e.target.value))}
                       >
-                        {["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"].map(
-                          (m, i) => <MenuItem key={i} value={i}>{m}</MenuItem>
-                        )}
+                        {[
+                          "Jan",
+                          "Feb",
+                          "Mar",
+                          "Apr",
+                          "May",
+                          "Jun",
+                          "Jul",
+                          "Aug",
+                          "Sep",
+                          "Oct",
+                          "Nov",
+                          "Dec",
+                        ].map((m, i) => (
+                          <MenuItem key={i} value={i}>
+                            {m}
+                          </MenuItem>
+                        ))}
                       </Select>
                     </FormControl>
 
@@ -222,7 +239,11 @@ const handleCreateReport = async () => {
                         onChange={(e) => setSelectedYear(Number(e.target.value))}
                       >
                         {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() + i).map(
-                          (y) => <MenuItem key={y} value={y}>{y}</MenuItem>
+                          (y) => (
+                            <MenuItem key={y} value={y}>
+                              {y}
+                            </MenuItem>
+                          )
                         )}
                       </Select>
                     </FormControl>
@@ -238,7 +259,9 @@ const handleCreateReport = async () => {
               {/* Project Table */}
               <table className="table">
                 <thead>
-                  <tr><th>Project Name</th></tr>
+                  <tr>
+                    <th>Project Name</th>
+                  </tr>
                 </thead>
                 <tbody>
                   {filteredProjects.length > 0 ? (
@@ -248,7 +271,11 @@ const handleCreateReport = async () => {
                       </tr>
                     ))
                   ) : (
-                    <tr><td>No projects found for {selectedMonth + 1}/{selectedYear}</td></tr>
+                    <tr>
+                      <td>
+                        No projects found for {selectedMonth + 1}/{selectedYear}
+                      </td>
+                    </tr>
                   )}
                 </tbody>
               </table>
@@ -259,13 +286,19 @@ const handleCreateReport = async () => {
                   <h3>Employees in Project</h3>
                   <table className="table">
                     <thead>
-                      <tr><th>Employee</th></tr>
-    
+                      <tr>
+                        <th>Employee</th>
+                      </tr>
+
                       {/* <th>Role</th><th>Total Hours</th> */}
-                                      </thead>
+                    </thead>
                     <tbody>
                       {selectedProjectDetails.map((detail, index) => (
-                        <tr key={index} onClick={() => setSelectedEmployee(detail)} style={{ cursor: "pointer" }}>
+                        <tr
+                          key={index}
+                          onClick={() => setSelectedEmployee(detail)}
+                          style={{ cursor: "pointer" }}
+                        >
                           <td>{detail.fullname}</td>
                           {/* <td>{detail.role}</td>
                           <td>{detail.totalHours}</td> */}
@@ -274,46 +307,45 @@ const handleCreateReport = async () => {
                     </tbody>
                   </table>
 
-        {selectedEmployee && (
-  <div className="employee-details">
-    <h4>Details for {selectedEmployee.fullname}</h4>
-    
-    {/* Group hours by date */}
-    {Object.entries(
-      selectedEmployee.hourBlocks.reduce((groups, block) => {
-        const date = new Date(block.entryDate).toLocaleDateString();
-        if (!groups[date]) groups[date] = [];
-        groups[date].push(block);
-        return groups;
-      }, {})
-    ).map(([date, blocks]) => (
-      <div key={date} style={{ marginBottom: '15px' }}>
-        <h5 style={{ color: '#1976d2', marginBottom: '5px' }}>{date}</h5>
-        <table className="table table-bordered" style={{ fontSize: '14px' }}>
-          <thead>
-            <tr>
-              <th>Hour</th>
-              <th>Type</th>
-              <th>Phase</th>
-              <th>Task</th>
-            </tr>
-          </thead>
-          <tbody>
-            {blocks.map((b, i) => (
-              <tr key={i}>
-                <td>{b.hour}</td>
-                <td>{b.projectType || "-"}</td>
-                <td>{b.projectPhase || "-"}</td>
-                <td>{b.projectTask || "-"}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    ))}
-  </div>
-)}
+                  {selectedEmployee && (
+                    <div className="employee-details">
+                      <h4>Details for {selectedEmployee.fullname}</h4>
 
+                      {/* Group hours by date */}
+                      {Object.entries(
+                        selectedEmployee.hourBlocks.reduce((groups, block) => {
+                          const date = new Date(block.entryDate).toLocaleDateString();
+                          if (!groups[date]) groups[date] = [];
+                          groups[date].push(block);
+                          return groups;
+                        }, {})
+                      ).map(([date, blocks]) => (
+                        <div key={date} style={{ marginBottom: "15px" }}>
+                          <h5 style={{ color: "#1976d2", marginBottom: "5px" }}>{date}</h5>
+                          <table className="table table-bordered" style={{ fontSize: "14px" }}>
+                            <thead>
+                              <tr>
+                                <th>Hour</th>
+                                <th>Type</th>
+                                <th>Phase</th>
+                                <th>Task</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {blocks.map((b, i) => (
+                                <tr key={i}>
+                                  <td>{b.hour}</td>
+                                  <td>{b.projectType || "-"}</td>
+                                  <td>{b.projectPhase || "-"}</td>
+                                  <td>{b.projectTask || "-"}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
             </>
