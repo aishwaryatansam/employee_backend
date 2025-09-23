@@ -8,6 +8,7 @@ export const addProjects = (db) => (req, res) => {
     startDate,
     endDate,
     completedDate,
+    assignedMembers,
     status,
     phases, // array from frontend
   } = req.body;
@@ -23,8 +24,8 @@ export const addProjects = (db) => (req, res) => {
 
   const sql = `
     INSERT INTO projects 
-    (project_name, project_type, description, start_date, end_date, completed_date, status, phases) 
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    (project_name, project_type, description, start_date, end_date, completed_date, assign_members, status, phases) 
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
 
   db.query(
@@ -36,6 +37,7 @@ export const addProjects = (db) => (req, res) => {
       startDate,
       endDate,
       completedDate || null,
+      assignedMembers,
       status,
       JSON.stringify(formattedPhases),
     ],
@@ -65,6 +67,7 @@ export const getProjects = (db) => (req, res) => {
       startDate: row.start_date,
       endDate: row.end_date,
       completedDate: row.completed_date,
+      assignedMembers: row.assign_members,
       status: row.status,
       phases: JSON.parse(row.phases || "[]"),
     }));
@@ -73,21 +76,41 @@ export const getProjects = (db) => (req, res) => {
   });
 };
 
-
 // Update Project
 export const updateProject = (db) => (req, res) => {
   const { id } = req.params; // <-- use id
-  const { projectName, projectType, description, startDate, endDate, completedDate, status, phases } = req.body;
+  const {
+    projectName,
+    projectType,
+    description,
+    startDate,
+    endDate,
+    completedDate,
+    assignedMembers,
+    status,
+    phases,
+  } = req.body;
 
   const sql = `
     UPDATE projects 
-    SET project_name=?, project_type=?, description=?, start_date=?, end_date=?, completed_date=?, status=?, phases=? 
+    SET project_name=?, project_type=?, description=?, start_date=?, end_date=?, completed_date=?, assign_members=?, status=?, phases=? 
     WHERE project_id=?  -- your DB column is still project_id
   `;
 
   db.query(
     sql,
-    [projectName, projectType, description, startDate, endDate, completedDate, status, JSON.stringify(phases), id], // <-- use id
+    [
+      projectName,
+      projectType,
+      description,
+      startDate,
+      endDate,
+      completedDate,
+      assignedMembers,
+      status,
+      JSON.stringify(phases),
+      id,
+    ], // <-- use id
     (err, result) => {
       console.log("Update result:", result);
 

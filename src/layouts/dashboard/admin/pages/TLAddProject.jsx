@@ -32,9 +32,9 @@ function TLAddProject() {
   const [completedDate, setCompletedDate] = useState("");
   const [teamMembers, setTeamMembers] = useState([]);
   const [selectedMembers, setSelectedMembers] = useState([]);
+  const [assignedMembers, setAssignedMembers] = useState("");
   const [projectType, setProjectType] = useState("Billable");
   const [projectData, setProjectData] = useState([]);
-  const [assignedMembers, setAssignedMembers] = useState("");
   const [projectsList, setProjectsList] = useState(() => {
     const stored = localStorage.getItem("tl_project_data");
     return stored ? JSON.parse(stored) : [];
@@ -66,6 +66,7 @@ function TLAddProject() {
     setStartDate(project.startDate ? project.startDate.split("T")[0] : "");
     setEndDate(project.endDate ? project.endDate.split("T")[0] : "");
     setCompletedDate(project.completedDate ? project.completedDate.split("T")[0] : "");
+    setAssignedMembers(project.assignedMembers || "");
     setStatus(project.status || "Ongoing");
     setPhases(project.phases || [{ phaseName: "", tasks: [{ taskName: "", assignedTo: "" }] }]);
     setIsEditing(true);
@@ -191,9 +192,9 @@ function TLAddProject() {
       startDate,
       endDate,
       completedDate: completedDate || null,
+      assignedMembers,
       status,
       phases,
-      assignedMembers,
     };
 
     try {
@@ -298,7 +299,7 @@ function TLAddProject() {
                     </FormControl>
                   </Grid>
 
-                  <Box mt={4} gap={12}>
+                  {/* <Box mt={4} gap={12}>
                     <Typography variant="h6" fontWeight="bold" mb={2}>
                       Project Phases
                     </Typography>
@@ -372,7 +373,12 @@ function TLAddProject() {
                       </Box>
                     ))}
                     <Box mt={4} display="flex" gap={2}>
-                      <MDButton onClick={handleAddPhase} variant="gradient" color="info" size="small">
+                      <MDButton
+                        onClick={handleAddPhase}
+                        variant="gradient"
+                        color="info"
+                        size="small"
+                      >
                         Add Phase
                       </MDButton>
                       <Button
@@ -385,7 +391,7 @@ function TLAddProject() {
                         Remove Phase
                       </Button>
                     </Box>
-                  </Box>
+                  </Box> */}
 
                   <Grid item xs={12}>
                     <TextField
