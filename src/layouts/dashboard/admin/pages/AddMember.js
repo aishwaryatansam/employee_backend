@@ -136,7 +136,7 @@ const AddMembers = () => {
               }}
             >
               <Typography variant="h5" fontWeight="bold">
-                Add New Member
+                Add Employee
               </Typography>
               <Typography variant="subtitle2">Enter details to register</Typography>
             </Box>
