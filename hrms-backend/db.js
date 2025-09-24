@@ -3,6 +3,7 @@ import cors from "cors";
 import mysql from "mysql2";
 import path from "path";
 import { fileURLToPath } from "url";
+import dotenv from "dotenv";
 import {
   addMember,
   getMembers,
@@ -19,11 +20,16 @@ import {
   insertApprovalStatus,
   getHourDetailsByMonthForCeo,
 } from "./controller/timesheetContoller.js";
-import { addProjects, getProjects, updateProject, deleteProject} from "./controller/projectController.js";
+import {
+  addProjects,
+  getProjects,
+  updateProject,
+  deleteProject,
+} from "./controller/projectController.js";
 import { requestPasswordReset, resetPassword } from "./controller/memberController.js";
+dotenv.config();
 const app = express();
 app.use(express.json());
-
 
 // Resolve __dirname for ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -35,12 +41,11 @@ app.use(express.urlencoded({ limit: "10mb", extended: true }));
 app.use(cors());
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 const db = mysql.createConnection({
-  host: "localhost",
-  user: "root",
-  password: "",
-  database: "employee",
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
 });
-
 db.connect((err) => {
   if (err) {
     console.error("DB connection error:", err);
