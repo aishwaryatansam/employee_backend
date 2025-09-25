@@ -342,49 +342,48 @@ const EmployeeDetails = () => {
   //   }
   //   return count;
   // };
-     
-    const getWorkHours = (row) => {
-      if (!row.checkIn || !row.checkOut) return 0;
 
-      const checkIn = row.checkIn.includes(":") ? row.checkIn : "00:00:00";
-      const checkOut = row.checkOut.includes(":") ? row.checkOut : "00:00:00";
+  const getWorkHours = (row) => {
+    if (!row.checkIn || !row.checkOut) return 0;
 
-      const [inH, inM] = checkIn.split(":").map(Number);
-      const [outH, outM] = checkOut.split(":").map(Number);
+    const checkIn = row.checkIn.includes(":") ? row.checkIn : "00:00:00";
+    const checkOut = row.checkOut.includes(":") ? row.checkOut : "00:00:00";
 
-      let diff = outH * 60 + outM - (inH * 60 + inM);
-      if (diff < 0) diff = 0; // prevent negative hours
+    const [inH, inM] = checkIn.split(":").map(Number);
+    const [outH, outM] = checkOut.split(":").map(Number);
 
-      // Subtract 1 hour lunch if between 10-18
-      if (inH <= 13 && outH >= 14) diff -= 60;
+    let diff = outH * 60 + outM - (inH * 60 + inM);
+    if (diff < 0) diff = 0; // prevent negative hours
 
-      return (diff / 60).toFixed(2); // return hours in decimal
-    };
+    // Subtract 1 hour lunch if between 10-18
+    if (inH <= 13 && outH >= 14) diff -= 60;
 
+    return (diff / 60).toFixed(2); // return hours in decimal
+  };
 
   const getMealBreak = () => "1 hr";
   const calculateTotals = () => {
-  let total = 0;
-  let regular = 0;
-  let overtime = 0;
-  let holiday = 0;
+    let total = 0;
+    let regular = 0;
+    let overtime = 0;
+    let holiday = 0;
 
-  timecardData.forEach((row) => {
-    if (row.status === "Leave" || row.status === "Holiday") {
-      holiday += 1;
-      return;
-    }
+    timecardData.forEach((row) => {
+      if (row.status === "Leave" || row.status === "Holiday") {
+        holiday += 1;
+        return;
+      }
 
-    const worked = parseFloat(getWorkHours(row)) || 0;
-    const ot = parseFloat(row.overtime) || 0;
+      const worked = parseFloat(getWorkHours(row)) || 0;
+      const ot = parseFloat(row.overtime) || 0;
 
-    total += worked + ot;
-    regular += worked;
-    overtime += ot;
-  });
+      total += worked + ot;
+      regular += worked;
+      overtime += ot;
+    });
 
-  return { total, regular, overtime, holiday };
-};
+    return { total, regular, overtime, holiday };
+  };
 
   // const calculateTotals = () => {
   //   let total = 0;
@@ -490,7 +489,7 @@ const EmployeeDetails = () => {
                       <th>Meal Break</th>
                       <th>Work Hours</th>
                       <th>Overtime</th>
-                      <th>Approval</th>
+                      {/* <th>Approval</th> */}
                       <th>Details</th>
                     </tr>
                   </thead>
@@ -509,8 +508,8 @@ const EmployeeDetails = () => {
                           <td>
                             {hourBlocks.map((block, idx) => (
                               <div key={idx}>
-                                Hour: {block.hour}, Project Type: {block.projectType || "-"}, Project
-                                Category: {block.projectCategory || "-"}, Project Name:{" "}
+                                Hour: {block.hour}, Project Type: {block.projectType || "-"},
+                                Project Category: {block.projectCategory || "-"}, Project Name:{" "}
                                 {block.projectName || "-"}, Project Phase:{" "}
                                 {block.projectPhase || "-"}, Project Task:{" "}
                                 {block.projectTask || "-"}
@@ -659,7 +658,7 @@ const EmployeeDetails = () => {
                   </div>
                   {[...Array(9)].map((_, i) => {
                     const hour = 10 + i;
-                    if (hour === 13) return null; 
+                    if (hour === 13) return null;
                     const hourData = hourlyDetails[selectedDate]?.[hour] || {};
                     return (
                       <div key={i} className="hour-block">
