@@ -504,7 +504,7 @@ const EmployeeDetails = () => {
                           <td>{row.mealBreak || "1 hr"}</td>
                           <td>{getWorkHours(row)}</td>
                           <td>{row.overtime || 0}</td>
-                          <td>{row.approval || "Pending"}</td>
+                          {/* <td>{row.approval || "Pending"}</td> */}
                           <td>
                             {hourBlocks.map((block, idx) => (
                               <div key={idx}>
