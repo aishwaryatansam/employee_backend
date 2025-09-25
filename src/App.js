@@ -6,6 +6,7 @@ import Icon from "@mui/material/Icon";
 import MDBox from "components/MDBox";
 import Sidenav from "examples/Sidenav";
 import Configurator from "examples/Configurator";
+import { ToastContainer } from "react-toastify";
 
 // Custom Sidebars
 import HrSidebar from "layouts/dashboard/hr/sidebar/HrSidebar";
@@ -165,6 +166,7 @@ export default function App() {
 
         <Configurator />
         {/* {configsButton} */}
+        <ToastContainer/>
         <Routes>
           {getRoutes(routes)}
           {userRole === "ceo" && getRoutes(CEORoutes)}

@@ -20,7 +20,6 @@ import DashboardNavbar from "examples/Navbars/DashboardNavbar";
 import Footer from "examples/Footer";
 import MDBox from "components/MDBox";
 import MDButton from "components/MDButton";
-import DataTable from "examples/Tables/DataTable";
 import { useTheme } from "@mui/material/styles";
 
 function TLAddProject() {
@@ -34,7 +33,6 @@ function TLAddProject() {
   const [selectedMembers, setSelectedMembers] = useState([]);
   const [assignedMembers, setAssignedMembers] = useState("");
   const [projectType, setProjectType] = useState("Billable");
-  const [projectData, setProjectData] = useState([]);
   const [projectsList, setProjectsList] = useState(() => {
     const stored = localStorage.getItem("tl_project_data");
     return stored ? JSON.parse(stored) : [];
@@ -51,6 +49,14 @@ function TLAddProject() {
       .then((res) => res.json())
       .then((data) => setProjectsList(data))
       .catch((err) => console.error("Error fetching projects:", err));
+  }, []);
+
+  useEffect(() => {
+    const storedTeam = JSON.parse(localStorage.getItem("tl_team_members")) || [];
+    setTeamMembers(storedTeam);
+
+    const storedProjects = JSON.parse(localStorage.getItem("tl_project_data")) || [];
+    setProjectsList(storedProjects);
   }, []);
 
   const handleEditProject = (index) => {
@@ -114,34 +120,6 @@ function TLAddProject() {
       setCompletedDate("");
     }
   };
-
-  const mColumns = [
-    { Header: "Project Name", accessor: "projectName" },
-    { Header: "Project Type", accessor: "projectType" },
-    { Header: "Phase", accessor: "phase" },
-    { Header: "Task", accessor: "task" },
-    { Header: "Assigned Member", accessor: "assignedMember" },
-  ];
-
-  const mRows = projectData.flatMap((project) =>
-    project.projectPhases.flatMap((phase) =>
-      phase.phaseTasks.map((task) => ({
-        projectName: project.projectName,
-        projectType: project.projectType,
-        phase: phase.phaseName,
-        task: task.taskName,
-        assignedMember: task.assignedTo,
-      }))
-    )
-  );
-
-  useEffect(() => {
-    const storedTeam = JSON.parse(localStorage.getItem("tl_team_members")) || [];
-    setTeamMembers(storedTeam);
-
-    const storedProjects = JSON.parse(localStorage.getItem("tl_project_data")) || [];
-    setProjectsList(storedProjects);
-  }, []);
 
   const handleAddPhase = () => {
     setPhases([...phases, { phaseName: "", tasks: [{ taskName: "", assignedTo: "" }] }]);
@@ -299,100 +277,6 @@ function TLAddProject() {
                     </FormControl>
                   </Grid>
 
-                  {/* <Box mt={4} gap={12}>
-                    <Typography variant="h6" fontWeight="bold" mb={2}>
-                      Project Phases
-                    </Typography>
-                    {phases.map((phase, phaseIndex) => (
-                      <Box
-                        key={phaseIndex}
-                        mb={3}
-                        p={2}
-                        sx={{ border: `1px solid ${theme.palette.divider}`, borderRadius: 2 }}
-                      >
-                        <TextField
-                          fullWidth
-                          label={`Phase ${phaseIndex + 1} Name`}
-                          value={phase.phaseName}
-                          onChange={(e) => handlePhaseChange(phaseIndex, e.target.value)}
-                          sx={{ mb: 2 }}
-                        />
-                        {phase.tasks.map((task, taskIndex) => (
-                          <Grid container spacing={2} alignItems="center" mb={1} key={taskIndex}>
-                            <Grid item xs={6}>
-                              <TextField
-                                fullWidth
-                                label="Task Name"
-                                value={task.taskName}
-                                onChange={(e) =>
-                                  handleTaskChange(
-                                    phaseIndex,
-                                    taskIndex,
-                                    "taskName",
-                                    e.target.value
-                                  )
-                                }
-                              />
-                            </Grid>
-                            <Grid item xs={6}>
-                              <TextField
-                                fullWidth
-                                label="Assign To"
-                                value={task.assignedTo}
-                                onChange={(e) =>
-                                  handleTaskChange(
-                                    phaseIndex,
-                                    taskIndex,
-                                    "assignedTo",
-                                    e.target.value
-                                  )
-                                }
-                              />
-                            </Grid>
-                          </Grid>
-                        ))}
-                        <Box mt={4} display="flex" gap={2}>
-                          <MDButton
-                            onClick={() => handleAddTask(phaseIndex)}
-                            variant="gradient"
-                            color="info"
-                            size="small"
-                          >
-                            Add Task
-                          </MDButton>
-                          <Button
-                            onClick={() => handleRemoveTask(phaseIndex, phase.tasks.length - 1)}
-                            variant="contained"
-                            size="small"
-                            color="error"
-                            disabled={phase.tasks.length === 0}
-                          >
-                            Remove Task
-                          </Button>
-                        </Box>
-                      </Box>
-                    ))}
-                    <Box mt={4} display="flex" gap={2}>
-                      <MDButton
-                        onClick={handleAddPhase}
-                        variant="gradient"
-                        color="info"
-                        size="small"
-                      >
-                        Add Phase
-                      </MDButton>
-                      <Button
-                        onClick={() => handleRemovePhase(phases.length - 1)}
-                        variant="contained"
-                        size="small"
-                        color="error"
-                        disabled={phases.length === 0}
-                      >
-                        Remove Phase
-                      </Button>
-                    </Box>
-                  </Box> */}
-
                   <Grid item xs={12}>
                     <TextField
                       fullWidth
@@ -509,10 +393,16 @@ function TLAddProject() {
                       p: 4,
                       borderRadius: 3,
                       boxShadow: 4,
-                      backgroundColor: theme.palette.background.paper,
-                      color: theme.palette.text.primary,
+                      backgroundColor:
+                        project.status === "Ongoing"
+                          ? "#BDE3C3" // Light green for ongoing
+                          : project.status === "Completed"
+                            ? "#f8F8B4" // Light yellow for completed
+                            : theme.palette.background.paper,
+                      color: "#000", // Dark text for readability
                     }}
                   >
+
                     <Typography variant="subtitle1" fontWeight="bold">
                       {project.projectName}
                     </Typography>
@@ -538,34 +428,6 @@ function TLAddProject() {
                       <strong>Members:</strong> {project.assignedMembers}
                     </Typography>
 
-                    {/* {project.phases && project.phases.length > 0 && (
-                      <Box mt={1}>
-                        <Typography variant="body2" fontWeight="bold">
-                          Phases:
-                        </Typography>
-                        {project.phases.map((phase, pIndex) => (
-                          <Box key={pIndex} ml={2} mt={1}>
-                            <Typography variant="body2">
-                              <strong>Phase {pIndex + 1}:</strong> {phase.phaseName || "(No Name)"}
-                            </Typography>
-                            {phase.tasks && phase.tasks.length > 0 ? (
-                              <ul style={{ marginTop: 4 }}>
-                                {phase.tasks.map((task, tIndex) => (
-                                  <li key={tIndex}>
-                                    {task.taskName || "Untitled Task"}{" "}
-                                    {task.assignedTo ? `(Assigned to: ${task.assignedTo})` : ""}
-                                  </li>
-                                ))}
-                              </ul>
-                            ) : (
-                              <Typography variant="caption" ml={1}>
-                                No tasks
-                              </Typography>
-                            )}
-                          </Box>
-                        ))}
-                      </Box>
-                    )} */}
                     <Box mt={2} display="flex" gap={1}>
                       <Button
                         onClick={() => handleEditProject(index)}
