@@ -2,7 +2,8 @@ import bcrypt from "bcryptjs";
 import nodemailer from "nodemailer";
 import fs from "fs";
 import path from "path";
-
+import dotenv from "dotenv";
+dotenv.config();
 // 🔑 Token generator
 function generateToken() {
   return Math.random().toString(36).substr(2) + Date.now().toString(36);
@@ -14,7 +15,6 @@ export const getEmployeeCount = (db) => (req, res) => {
     res.json({ totalEmployees: results[0].totalEmployees });
   });
 };
-
 
 // ➕ Add new member
 export const addMember = (db) => async (req, res) => {
@@ -46,18 +46,14 @@ export const addMember = (db) => async (req, res) => {
 
       const empId = `TANSAMEMP${result.insertId.toString().padStart(3, "0")}`;
 
-      db.query(
-        "UPDATE members SET empId = ? WHERE id = ?",
-        [empId, result.insertId],
-        (err2) => {
-          if (err2) return res.status(500).json({ error: err2.message });
+      db.query("UPDATE members SET empId = ? WHERE id = ?", [empId, result.insertId], (err2) => {
+        if (err2) return res.status(500).json({ error: err2.message });
 
-          res.status(201).json({
-            message: "Member added successfully",
-            empId,
-          });
-        }
-      );
+        res.status(201).json({
+          message: "Member added successfully",
+          empId,
+        });
+      });
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -133,7 +129,17 @@ export const updateMember = (db) => async (req, res) => {
         SET fullName = ?, email = ?, phone = ?, empId = ?, department = ?, role = ?, password = ?, imagePath = ?
         WHERE id = ?
       `;
-      values = [fullName, email, phone, empId, department, role, hashedPassword, savedImagePath, id];
+      values = [
+        fullName,
+        email,
+        phone,
+        empId,
+        department,
+        role,
+        hashedPassword,
+        savedImagePath,
+        id,
+      ];
     } else {
       sql = `
         UPDATE members
@@ -208,16 +214,18 @@ export const requestPasswordReset = (db) => async (req, res) => {
             host: "smtp.gmail.com",
             port: 587,
             secure: false,
+
             auth: {
-              user: "testaishwarya4@gmail.com",
-              pass: "ofjihgwnvlpdmvql", // ⚠️ replace with app password
+              user: process.env.EMAIL_USER,
+              pass: process.env.EMAIL_PASS,
             },
+            // ⚠️ replace with app password
           });
 
           const resetLink = `http://localhost:3000/reset-password?token=${token}`;
 
           const mailOptions = {
-            from: '"Your App Name" <testaishwarya4@gmail.com>',
+            from: '"Your App Name"<${process.env.EMAIL_USER}>',
             to: email,
             subject: "Password Reset",
             html: `
@@ -245,28 +253,24 @@ export const resetPassword = (db) => async (req, res) => {
   const { token, password } = req.body;
   if (!token || !password) return res.status(400).json({ error: "Token and password required" });
 
-  db.query(
-    "SELECT * FROM members WHERE reset_token = ?",
-    [token],
-    async (err, results) => {
-      if (err) return res.status(500).json({ error: "DB error" });
-      if (results.length === 0) return res.status(400).json({ error: "Invalid token" });
+  db.query("SELECT * FROM members WHERE reset_token = ?", [token], async (err, results) => {
+    if (err) return res.status(500).json({ error: "DB error" });
+    if (results.length === 0) return res.status(400).json({ error: "Invalid token" });
 
-      const user = results[0];
-      if (Date.now() > user.reset_token_expiry) {
-        return res.status(400).json({ error: "Token expired" });
-      }
-
-      const hashedPassword = await bcrypt.hash(password, 10);
-
-      db.query(
-        "UPDATE members SET password = ?, reset_token = NULL, reset_token_expiry = NULL WHERE id = ?",
-        [hashedPassword, user.id],
-        (err2) => {
-          if (err2) return res.status(500).json({ error: "DB update failed" });
-          res.json({ success: true, message: "Password reset successful" });
-        }
-      );
+    const user = results[0];
+    if (Date.now() > user.reset_token_expiry) {
+      return res.status(400).json({ error: "Token expired" });
     }
-  );
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    db.query(
+      "UPDATE members SET password = ?, reset_token = NULL, reset_token_expiry = NULL WHERE id = ?",
+      [hashedPassword, user.id],
+      (err2) => {
+        if (err2) return res.status(500).json({ error: "DB update failed" });
+        res.json({ success: true, message: "Password reset successful" });
+      }
+    );
+  });
 };
