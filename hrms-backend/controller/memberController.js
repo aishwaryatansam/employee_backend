@@ -211,8 +211,8 @@ export const requestPasswordReset = (db) => async (req, res) => {
 
         try {
           let transporter = nodemailer.createTransport({
-            host: "smtp.gmail.com",
-            port: 587,
+            host: process.env.EMAIL_HOST,
+            port: process.env.EMAIL_PORT,
             secure: false,
 
             auth: {
@@ -241,7 +241,7 @@ export const requestPasswordReset = (db) => async (req, res) => {
           return res.json({ success: true, message: "Reset link sent to email" });
         } catch (mailError) {
           console.error("Mail sending failed:", mailError);
-          return res.status(500).json({ error: "Failed to send reset email" });
+return res.status(500).json({ error: "Failed to send reset email" });
         }
       }
     );
