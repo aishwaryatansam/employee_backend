@@ -1,13 +1,15 @@
 // controllers/projectController.js
 // controllers/projectController.js
+
 export const addProjects = (db) => (req, res) => {
   const {
     projectName,
     projectType,
     description,
-    startDate,
-    endDate,
-    completedDate,
+    plannedStartDate,
+    plannedEndDate,
+    actualStartDate,
+    actualEndDate,
     assignedMembers,
     status,
     phases, // array from frontend
@@ -24,9 +26,9 @@ export const addProjects = (db) => (req, res) => {
 
   const sql = `
     INSERT INTO projects 
-    (project_name, project_type, description, start_date, end_date, completed_date, assign_members, status, phases) 
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `;
+    (project_name, project_type, description, planned_start_date, planned_end_date, actual_start_date, actual_end_date, assign_members, status, phases) 
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+`;
 
   db.query(
     sql,
@@ -34,9 +36,10 @@ export const addProjects = (db) => (req, res) => {
       projectName,
       projectType,
       description,
-      startDate,
-      endDate,
-      completedDate || null,
+      plannedStartDate || null,
+      plannedEndDate || null,
+      actualStartDate || null,
+      actualEndDate || null,
       assignedMembers,
       status,
       JSON.stringify(formattedPhases),
@@ -64,9 +67,10 @@ export const getProjects = (db) => (req, res) => {
       projectName: row.project_name,
       projectType: row.project_type,
       description: row.description,
-      startDate: row.start_date,
-      endDate: row.end_date,
-      completedDate: row.completed_date,
+      plannedStartDate: row.planned_start_date,
+      plannedEndDate: row.planned_end_date,
+      actualStartDate: row.actual_start_date,
+      actualEndDate: row.actual_end_date,
       assignedMembers: row.assign_members,
       status: row.status,
       phases: JSON.parse(row.phases || "[]"),
@@ -83,9 +87,10 @@ export const updateProject = (db) => (req, res) => {
     projectName,
     projectType,
     description,
-    startDate,
-    endDate,
-    completedDate,
+    plannedStartDate,
+    plannedEndDate,
+    actualStartDate,
+    actualEndDate,
     assignedMembers,
     status,
     phases,
@@ -93,7 +98,7 @@ export const updateProject = (db) => (req, res) => {
 
   const sql = `
     UPDATE projects 
-    SET project_name=?, project_type=?, description=?, start_date=?, end_date=?, completed_date=?, assign_members=?, status=?, phases=? 
+    SET project_name=?, project_type=?, description=?, planned_start_date, planned_end_date, actual_start_date, actual_end_date assign_members=?, status=?, phases=? 
     WHERE project_id=?  -- your DB column is still project_id
   `;
 
@@ -103,9 +108,10 @@ export const updateProject = (db) => (req, res) => {
       projectName,
       projectType,
       description,
-      startDate,
-      endDate,
-      completedDate,
+      plannedStartDate,
+      plannedEndDate,
+      actualStartDate,
+      actualEndDate,
       assignedMembers,
       status,
       JSON.stringify(phases),

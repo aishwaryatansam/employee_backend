@@ -26,9 +26,10 @@ function TLAddProject() {
   const [projectName, setProjectName] = useState("");
   const [description, setDescription] = useState("");
   const [status, setStatus] = useState("Ongoing");
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
-  const [completedDate, setCompletedDate] = useState("");
+  const [plannedStartDate, setPlannedStartDate] = useState("");
+  const [plannedEndDate, setPlannedEndDate] = useState("");
+  const [actualStartDate, setActualStartDate] = useState("");
+  const [actualEndDate, setActualEndDate] = useState("");
   const [teamMembers, setTeamMembers] = useState([]);
   const [selectedMembers, setSelectedMembers] = useState([]);
   const [assignedMembers, setAssignedMembers] = useState("");
@@ -69,9 +70,11 @@ function TLAddProject() {
     setProjectName(project.projectName || "");
     setProjectType(project.projectType || "Billable");
     setDescription(project.description || "");
-    setStartDate(project.startDate ? project.startDate.split("T")[0] : "");
-    setEndDate(project.endDate ? project.endDate.split("T")[0] : "");
-    setCompletedDate(project.completedDate ? project.completedDate.split("T")[0] : "");
+    setPlannedStartDate(project.plannedStartDate ? project.plannedStartDate.split("T")[0] : "");
+    setPlannedEndDate(project.plannedEndDate ? project.plannedEndDate.split("T")[0] : "");
+    setCompletedDate(project.actualStartDate ? project.actualStartDate.split("T")[0] : "");
+    setActualStartDate(project.actualEndDate ? project.actualEndDate.split("T")[0] : "");
+    setActualEndDate(project.actualEndDate ? project.actualEndDate.split("T")[0] : "");
     setAssignedMembers(project.assignedMembers || "");
     setStatus(project.status || "Ongoing");
     setPhases(project.phases || [{ phaseName: "", tasks: [{ taskName: "", assignedTo: "" }] }]);
@@ -158,7 +161,7 @@ function TLAddProject() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!projectName || !description || !startDate || !endDate) {
+    if (!projectName || !description) {
       toast.error("Please fill in all required fields");
       return;
     }
@@ -167,9 +170,10 @@ function TLAddProject() {
       projectName,
       projectType,
       description,
-      startDate,
-      endDate,
-      completedDate: completedDate || null,
+      plannedStartDate,
+      plannedEndDate,
+      actualStartDate: actualStartDate || null,
+      actualEndDate: actualEndDate || null,
       assignedMembers,
       status,
       phases,
@@ -217,9 +221,10 @@ function TLAddProject() {
       setProjectName("");
       setDescription("");
       setStatus("Ongoing");
-      setStartDate("");
-      setEndDate("");
-      setCompletedDate("");
+      setPlannedStartDate("");
+      setPlannedEndDate("");
+      setActualStartDate("");
+      setActualEndDate("");
       setProjectType("Billable");
       setPhases([{ phaseName: "", tasks: [{ taskName: "", assignedTo: "" }] }]);
       setAssignedMembers("");
@@ -292,10 +297,10 @@ function TLAddProject() {
                     <TextField
                       fullWidth
                       type="date"
-                      label="Start Date"
+                      label="Planned Start Date"
                       InputLabelProps={{ shrink: true }}
-                      value={startDate}
-                      onChange={(e) => setStartDate(e.target.value)}
+                      value={plannedStartDate}
+                      onChange={(e) => setPlannedStartDate(e.target.value)}
                     />
                   </Grid>
 
@@ -303,24 +308,32 @@ function TLAddProject() {
                     <TextField
                       fullWidth
                       type="date"
-                      label="End Date"
+                      label="Planned End Date"
                       InputLabelProps={{ shrink: true }}
-                      value={endDate}
-                      onChange={(e) => setEndDate(e.target.value)}
+                      value={plannedEndDate}
+                      onChange={(e) => setPlannedEndDate(e.target.value)}
                     />
                   </Grid>
-
                   <Grid item xs={12} sm={4}>
                     <TextField
                       fullWidth
                       type="date"
-                      label="Completed Date (Optional)"
+                      label="Actual Start Date"
                       InputLabelProps={{ shrink: true }}
-                      value={completedDate}
-                      onChange={(e) => setCompletedDate(e.target.value)}
+                      value={actualStartDate}
+                      onChange={(e) => setActualStartDate(e.target.value)}
                     />
                   </Grid>
-
+                  <Grid item xs={12} sm={4}>
+                    <TextField
+                      fullWidth
+                      type="date"
+                      label="Actual End Date"
+                      InputLabelProps={{ shrink: true }}
+                      value={actualEndDate}
+                      onChange={(e) => setActualEndDate(e.target.value)}
+                    />
+                  </Grid>
                   <Grid item xs={12} sm={6}>
                     <FormControl fullWidth>
                       <InputLabel>Status</InputLabel>
@@ -329,6 +342,7 @@ function TLAddProject() {
                         onChange={(e) => handleStatusChange(e.target.value)}
                         input={<OutlinedInput label="Status" />}
                       >
+                        <MenuItem value="">Yet to start</MenuItem>
                         <MenuItem value="Ongoing">Ongoing</MenuItem>
                         <MenuItem value="Completed">Completed</MenuItem>
                       </Select>
@@ -360,10 +374,10 @@ function TLAddProject() {
                       setProjectName("");
                       setDescription("");
                       setStatus("Ongoing");
-                      setStartDate("");
-                      setEndDate("");
-                      setCompletedDate("");
-                      setSelectedMembers([]);
+                      setPlannedStartDate("");
+                      setPlannedEndDate("");
+                      setActualStartDate("");
+                      setActualEndDate("");
                       setProjectType("Billable");
                       setPhases([{ phaseName: "", tasks: [{ taskName: "", assignedTo: "" }] }]);
                       setAssignedMembers("");
@@ -397,12 +411,11 @@ function TLAddProject() {
                         project.status === "Ongoing"
                           ? "#BDE3C3" // Light green for ongoing
                           : project.status === "Completed"
-                            ? "#f8F8B4" // Light yellow for completed
-                            : theme.palette.background.paper,
+                          ? "#f8F8B4" // Light yellow for completed
+                          : theme.palette.background.paper,
                       color: "#000", // Dark text for readability
                     }}
                   >
-
                     <Typography variant="subtitle1" fontWeight="bold">
                       {project.projectName}
                     </Typography>
@@ -414,14 +427,14 @@ function TLAddProject() {
                       <strong>Status:</strong> {project.status}
                     </Typography>
                     <Typography variant="body2">
-                      <strong>Start:</strong> {project.startDate}
+                      <strong>Start:</strong> {project.plannedStartDate}
                     </Typography>
                     <Typography variant="body2">
-                      <strong>End:</strong> {project.endDate}
+                      <strong>End:</strong> {project.plannedEndDate}
                     </Typography>
                     {project.completedDate && (
                       <Typography variant="body2">
-                        <strong>Completed:</strong> {project.completedDate}
+                        <strong>Actual start date:</strong> {project.actualStartDate}
                       </Typography>
                     )}
                     <Typography variant="body2">
