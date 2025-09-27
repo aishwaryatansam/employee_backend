@@ -283,7 +283,7 @@ const Timesheet = () => {
               className={`tab ${activeTab === "projectStaus" ? "active" : ""}`}
               onClick={() => setActiveTab("projectStaus")}
             >
-              Project Status
+              Project Home
             </button>
           </div>
           {activeTab === "timesheet" && (

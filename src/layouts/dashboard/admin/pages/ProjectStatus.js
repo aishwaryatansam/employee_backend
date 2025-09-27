@@ -178,7 +178,7 @@ const ProjectStatus = () => {
       <DashboardNavbar />
       <div className="container">
         <div className="main">
-          <h1 className="title">Project Status</h1>
+          <h1 className="title">Project Home</h1>
 
           {/* Tabs */}
           <div className="tabs">
@@ -186,7 +186,7 @@ const ProjectStatus = () => {
               className={`tab ${activeTab === "projectStatus" ? "active" : ""}`}
               onClick={() => setActiveTab("projectStatus")}
             >
-              Project Status
+              Project Home
             </button>
             <button
               className={`tab ${activeTab === "addProject" ? "active" : ""}`}

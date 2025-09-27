@@ -35,6 +35,30 @@ const EmployeeDetails = () => {
     return h;
   };
 
+  const taskOptions = {
+    Software: {
+      Design: ["POC", "Architecture", "UI/UX"],
+      Development: ["Frontend", "Backend", "Parameter Tuning"],
+      Testing: ["Unit Testing", "System Testing"],
+      Release: ["Configuration Management", "Deploy"],
+      "Bug Fix": ["Error", "New Feature"],
+    },
+    Engineering: {
+      Design: ["Blueprint", "Simulation"],
+      Development: ["Prototype", "Fabrication"],
+      Testing: ["Load Testing", "Field Testing"],
+      Release: ["Handover", "Maintenance"],
+      "Bug Fix": ["Repair", "Upgrade"],
+    },
+    Training: {
+      Design: ["Curriculum Design"],
+      Development: ["Material Preparation"],
+      Testing: ["Mock Sessions"],
+      Release: ["Delivery"],
+      "Bug Fix": ["Content Update"],
+    },
+  };
+
   // Format 24-hour number to "X AM/PM" string
   const formatHour = (hour) => {
     if (hour === 12) return "12 PM";
@@ -707,13 +731,18 @@ const EmployeeDetails = () => {
                         </div>
                         <div className="field">
                           <label>Project Phase</label>
-                          <input
-                            type="text"
+                          <select
                             value={hourData.phase || ""}
                             onChange={(e) => updateHourDetail(hour, "phase", e.target.value)}
                             disabled={formMode === "Leave"}
-                            placeholder="Enter Phase"
-                          />
+                          >
+                            <option value="">-- Select Phase --</option>
+                            <option value="Design">Design</option>
+                            <option value="Development">Development</option>
+                            <option value="Testing">Testing</option>
+                            <option value="Release">Release</option>
+                            <option value="Bug Fix">Bug Fix</option>
+                          </select>
                         </div>
                         <div className="field">
                           <label>Project Task</label>
@@ -723,9 +752,13 @@ const EmployeeDetails = () => {
                             disabled={formMode === "Leave"}
                           >
                             <option value="">Select Task</option>
-                            {tasks.map((t, idx) => (
-                              <option key={idx}>{t}</option>
-                            ))}
+                            {(taskOptions[hourData.category]?.[hourData.phase] || []).map(
+                              (t, idx) => (
+                                <option key={idx} value={t}>
+                                  {t}
+                                </option>
+                              )
+                            )}
                           </select>
                         </div>
                         <hr />
