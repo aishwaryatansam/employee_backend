@@ -23,6 +23,54 @@ const EmployeeDetails = () => {
 
   // Helper: Pad time strings to hh:mm:ss or default
   const padTime = (t) => (t && t.match(/^\d{2}:\d{2}$/) ? t + ":00" : t || "00:00:00");
+const getHourlySlots = () => {
+  if (!checkInOut.checkIn || !checkInOut.checkOut) return [];
+
+  const [startH] = checkInOut.checkIn.split(":").map(Number);
+  const [endH] = checkInOut.checkOut.split(":").map(Number);
+  const now = new Date();
+  const currentHour = now.getHours();
+
+  let slots = [];
+  let hour = startH;
+
+  while (hour < endH && hour <= currentHour) {
+    if (hour === 13) { // skip lunch if you want
+      hour++;
+      continue;
+    }
+    slots.push(hour);
+    hour++;
+  }
+
+  return slots;
+};
+
+
+const handleCheckOutChange = (value) => {
+  const now = new Date();
+  const currentTime = now.getHours() * 60 + now.getMinutes();
+
+  const [h, m] = value.split(":").map(Number);
+  const selectedTime = h * 60 + m;
+
+  if (selectedTime > currentTime) {
+    alert("Future checkout time is not allowed!");
+    return;
+  }
+
+  if (checkInOut.checkIn) {
+    const [inH, inM] = checkInOut.checkIn.split(":").map(Number);
+    const checkInTime = inH * 60 + inM;
+
+    if (selectedTime < checkInTime) {
+      alert("Checkout cannot be earlier than check-in!");
+      return;
+    }
+  }
+
+  setCheckInOut((prev) => ({ ...prev, checkOut: value }));
+};
 
   // Parse hour key from string range like "1 PM - 2 PM"
   const parseHourKeyFromRange = (range) => {
@@ -60,11 +108,12 @@ const EmployeeDetails = () => {
   };
 
   // Format 24-hour number to "X AM/PM" string
-  const formatHour = (hour) => {
-    if (hour === 12) return "12 PM";
-    if (hour === 24) return "12 AM";
-    return hour > 12 ? `${hour - 12} PM` : `${hour} AM`;
-  };
+function formatHour(hour) {
+  let suffix = hour >= 12 ? "PM" : "AM";
+  let displayHour = hour % 12 || 12; // converts 0 -> 12, 13 -> 1
+  return `${displayHour} ${suffix}`;
+}
+
 
   // Format hour range given 24h start hour
   const formatHourRange = (h24) => {
@@ -653,13 +702,14 @@ const EmployeeDetails = () => {
                     </div>
                     <div className="field">
                       <label>Check-Out Time</label>
-                      <input
-                        type="time"
-                        value={checkInOut.checkOut}
-                        onChange={(e) =>
-                          setCheckInOut((prev) => ({ ...prev, checkOut: e.target.value }))
-                        }
-                      />
+                     <input
+  type="time"
+  value={checkInOut.checkOut || ""}
+  onChange={(e) => handleCheckOutChange(e.target.value)}
+  min={checkInOut.checkIn} // checkout must be >= checkin
+  max={new Date().toISOString().slice(11, 16)} // ⛔ no future checkout
+/>
+
                     </div>
                   </div>
                   <div className="field">
@@ -680,10 +730,10 @@ const EmployeeDetails = () => {
                       <option value="Leave">Leave</option>
                     </select>
                   </div>
-                  {[...Array(9)].map((_, i) => {
-                    const hour = 10 + i;
-                    if (hour === 13) return null;
+                  {getHourlySlots().map((hour, i) => {
                     const hourData = hourlyDetails[selectedDate]?.[hour] || {};
+                    
+                   
                     return (
                       <div key={i} className="hour-block">
                         <h4>
