@@ -24,18 +24,17 @@ const EmployeeDetails = () => {
   // Helper: Pad time strings to hh:mm:ss or default
   const padTime = (t) => (t && t.match(/^\d{2}:\d{2}$/) ? t + ":00" : t || "00:00:00");
 const getHourlySlots = () => {
-  if (!checkInOut.checkIn || !checkInOut.checkOut) return [];
+  if (!checkInOut.checkIn) return [];
 
   const [startH] = checkInOut.checkIn.split(":").map(Number);
-  const [endH] = checkInOut.checkOut.split(":").map(Number);
   const now = new Date();
   const currentHour = now.getHours();
 
   let slots = [];
   let hour = startH;
 
-  while (hour < endH && hour <= currentHour) {
-    if (hour === 13) { // skip lunch if you want
+  while (slots.length < 9 && hour <= currentHour) {
+    if (hour === 13) { // skip lunch
       hour++;
       continue;
     }
@@ -46,31 +45,6 @@ const getHourlySlots = () => {
   return slots;
 };
 
-
-const handleCheckOutChange = (value) => {
-  const now = new Date();
-  const currentTime = now.getHours() * 60 + now.getMinutes();
-
-  const [h, m] = value.split(":").map(Number);
-  const selectedTime = h * 60 + m;
-
-  if (selectedTime > currentTime) {
-    alert("Future checkout time is not allowed!");
-    return;
-  }
-
-  if (checkInOut.checkIn) {
-    const [inH, inM] = checkInOut.checkIn.split(":").map(Number);
-    const checkInTime = inH * 60 + inM;
-
-    if (selectedTime < checkInTime) {
-      alert("Checkout cannot be earlier than check-in!");
-      return;
-    }
-  }
-
-  setCheckInOut((prev) => ({ ...prev, checkOut: value }));
-};
 
   // Parse hour key from string range like "1 PM - 2 PM"
   const parseHourKeyFromRange = (range) => {
@@ -332,46 +306,62 @@ function formatHour(hour) {
   };
 
   const openEditPopup = (date) => {
-    const formatted = formatDate(date);
-    setSelectedDate(formatted);
+  const today = new Date();
+  const twoWeeksAgo = new Date();
+  twoWeeksAgo.setDate(today.getDate() - 14);
 
-    const entry = timecardData.find((d) => formatDate(d.date) === formatted);
+  if (date > today) {
+    alert("Future dates are not allowed!");
+    return;
+  }
 
-    if (entry) {
-      setCheckInOut({
-        checkIn: entry.checkIn || "",
-        checkOut: entry.checkOut || "",
+  if (date < twoWeeksAgo) {
+    alert("You can only edit timesheets from the past 2 weeks!");
+    return;
+  }
+
+  const formatted = formatDate(date);
+  setSelectedDate(formatted);
+
+  const entry = timecardData.find((d) => formatDate(d.date) === formatted);
+
+  if (entry) {
+    setCheckInOut({
+      checkIn: entry.checkIn || "",
+      checkOut: entry.checkOut || "",
+    });
+    setOvertimeHours(entry.overtime || 0);
+    setFormMode(entry.status || "Work");
+
+    try {
+      const parsed = JSON.parse(entry.hourBlocks || "[]");
+      const mapped = {};
+      parsed.forEach((block) => {
+        const key = parseHourKeyFromRange(block.hour);
+        if (key == null) return;
+        mapped[key] = {
+          type: block.projectType || "",
+          category: block.projectCategory || "",
+          name: block.projectName || "",
+          phase: block.projectPhase || "",
+          task: block.projectTask || "",
+        };
       });
-      setOvertimeHours(entry.overtime || 0);
-      setFormMode(entry.status || "Work");
-
-      try {
-        const parsed = JSON.parse(entry.hourBlocks || "[]");
-        const mapped = {};
-        parsed.forEach((block) => {
-          const key = parseHourKeyFromRange(block.hour);
-          if (key == null) return;
-          mapped[key] = {
-            type: block.projectType || "",
-            category: block.projectCategory || "",
-            name: block.projectName || "",
-            phase: block.projectPhase || "",
-            task: block.projectTask || "",
-          };
-        });
-        setHourlyDetails((prev) => ({ ...prev, [formatted]: mapped }));
-      } catch (err) {
-        console.error("Error parsing hourBlocks:", err);
-        setHourlyDetails((prev) => ({ ...prev, [formatted]: {} }));
-      }
-    } else {
-      setCheckInOut({ checkIn: "", checkOut: "" });
-      setOvertimeHours(0);
-      setFormMode("Work");
+      setHourlyDetails((prev) => ({ ...prev, [formatted]: mapped }));
+    } catch (err) {
+      console.error("Error parsing hourBlocks:", err);
       setHourlyDetails((prev) => ({ ...prev, [formatted]: {} }));
     }
-    setShowPopupForm(true);
-  };
+  } else {
+    setCheckInOut({ checkIn: "", checkOut: "" });
+    setOvertimeHours(0);
+    setFormMode("Work");
+    setHourlyDetails((prev) => ({ ...prev, [formatted]: {} }));
+  }
+
+  setShowPopupForm(true);
+};
+
 
   const closeEditPopup = () => {
     setShowPopupForm(false);
@@ -702,14 +692,13 @@ function formatHour(hour) {
                     </div>
                     <div className="field">
                       <label>Check-Out Time</label>
-                     <input
-  type="time"
-  value={checkInOut.checkOut || ""}
-  onChange={(e) => handleCheckOutChange(e.target.value)}
-  min={checkInOut.checkIn} // checkout must be >= checkin
-  max={new Date().toISOString().slice(11, 16)} // ⛔ no future checkout
-/>
-
+                      <input
+                        type="time"
+                        value={checkInOut.checkOut}
+                        onChange={(e) =>
+                          setCheckInOut((prev) => ({ ...prev, checkOut: e.target.value }))
+                        }
+                      />
                     </div>
                   </div>
                   <div className="field">
